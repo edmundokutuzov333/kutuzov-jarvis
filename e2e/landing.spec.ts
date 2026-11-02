@@ -4,6 +4,7 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   page,
 }) => {
   const modelRequests: string[] = [];
+  const runtimeRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
     if (
@@ -11,6 +12,9 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
       url.includes("binary-mlc-llm-libs")
     ) {
       modelRequests.push(url);
+    }
+    if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
+      runtimeRequests.push(url);
     }
   });
 
@@ -28,12 +32,14 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   ).toHaveCount(0);
 
   expect(modelRequests).toHaveLength(0);
+  expect(runtimeRequests).toHaveLength(0);
 });
 
 test("checks browser WebGPU capability without downloading model artifacts", async ({
   page,
 }) => {
   const artifactRequests: string[] = [];
+  const runtimeRequests: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
     if (
@@ -41,6 +47,9 @@ test("checks browser WebGPU capability without downloading model artifacts", asy
       url.includes("binary-mlc-llm-libs")
     ) {
       artifactRequests.push(url);
+    }
+    if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
+      runtimeRequests.push(url);
     }
   });
 
@@ -63,4 +72,5 @@ test("checks browser WebGPU capability without downloading model artifacts", asy
   }
 
   expect(artifactRequests).toHaveLength(0);
+  expect(runtimeRequests).toHaveLength(0);
 });
