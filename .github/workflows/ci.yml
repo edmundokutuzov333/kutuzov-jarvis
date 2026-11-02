@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -23,17 +23,21 @@ jobs:
         with:
           node-version: "22.16.0"
 
+      - name: Detect whether a lockfile is missing
+        id: lockfile-state
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "was_missing=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "was_missing=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install pinned npm CLI
         run: npm install --global npm@11.21.1
 
       - name: Generate lockfile when the repository does not have one yet
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only --legacy-peer-deps --no-audit --no-fund --verbose || {
-              cat "$(ls -t ~/.npm/_logs/*debug-0.log | head -n 1)"
-              exit 1
-            }
-          fi
+        if: steps.lockfile-state.outputs.was_missing == 'true'
+        run: npm install --package-lock-only --legacy-peer-deps --no-audit --no-fund
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps --no-audit --no-fund
@@ -56,7 +60,16 @@ jobs:
       - name: Browser smoke test
         run: npm run test:e2e
 
-      - name: Preserve generated npm lockfile for repository pinning
+      - name: Commit the generated lockfile on main
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.lockfile-state.outputs.was_missing == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "build: add npm dependency lockfile"
+          git push
+
+      - name: Preserve npm lockfile as a build artifact
         if: always() && hashFiles('package-lock.json') != ''
         uses: actions/upload-artifact@v4
         with:
