@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, sem API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0, 1 e 2 concluídas. Fase 3 implementada e validada por CI, mas sem aceitação física WebGPU. Fase 4 implementada e validada por CI; a integração com o modelo local e a aceitação integrada continuam pendentes. Fases 5 a 10 ainda não iniciadas.
+> **Estado actual:** Fases 0, 1 e 2 concluídas. Fase 3 implementada e validada por CI, mas sem aceitação física WebGPU. Fase 4 implementada e validada por CI; aceitação integrada pendente. Fase 5 implementada e validada por CI; inferência física e avaliação factual pendentes. Fases 6 a 10 ainda não iniciadas.
 
 ## Objectivo
 
@@ -39,15 +39,15 @@ O repositório oficial do portefólio mantém-se separado e não foi alterado ne
 | 1. Investigação e auditoria | Concluída, com pontos editoriais pendentes |
 | 2. Fundação técnica | Concluída e validada por CI |
 | 3. Local Intelligence Engine | Implementada e validada por CI; teste real em GPU física pendente |
-| 4. Knowledge Engine | Implementada e validada por CI; integração e aceitação com modelo pendentes |
-| 5. Agent Core | Não iniciada |
+| 4. Knowledge Engine | Implementada e validada por CI; avaliação integrada com modelo pendente |
+| 5. Agent Core | Implementada e validada por CI; avaliação real com Qwen3 pendente |
 | 6. Action Engine | Não iniciada |
 | 7. Memória e privacidade | Não iniciada |
 | 8. Interface conversacional | Não iniciada |
 | 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-A implementação de retrieval da Fase 4 pôde avançar separadamente porque é determinística e não inicializa nem depende do WebLLM. Isto não elimina o bloqueio de aceitação física da Fase 3 nem comprova respostas reais do modelo com a Knowledge Base.
+A Fase 5 foi implementada porque a orquestração, a construção de prompts e a validação de respostas podem ser desenvolvidas e testadas sem inferência física. Isto não elimina o bloqueio de aceitação da Fase 3 nem prova a qualidade real das respostas do modelo.
 
 ## Fase 1: investigação e auditoria
 
@@ -105,42 +105,64 @@ Implementado em `src/knowledge/`, sem adicionar dependências:
 - Contexto JSON compacto com factos, restrições, referências, estado de evidência e truncagem.
 - Orçamento predefinido de 4.500 caracteres e 6 registos por contexto.
 
-### O que a Knowledge Base contém
+Os guardrails impedem a apresentação de biografia não reconciliada, funções individuais por projecto não confirmadas, métricas como auditorias externas e scores de competências como certificações.
 
-Os factos públicos abrangem identidade e posicionamento, experiência, projectos, clientes, serviços, competências, disciplinas, princípios, processo e métricas publicadas.
-
-Os quatro guardrails editoriais impedem que o sistema:
-1. Apresente uma biografia consolidada antes de reconciliação.
-2. Atribua funções individuais aos projectos sem confirmação.
-3. Descreva métricas do portefólio como auditorias externas.
-4. Trate scores de competências como certificações ou avaliações independentes.
-
-Os IDs são locais ao JARVIS. Não representam UUIDs originais do CMS. O catálogo é um snapshot de 2 de Novembro de 2026, não uma ligação em tempo real ao CMS.
-
-### API do Knowledge Engine
-
-- `searchKnowledge(query, options)`: devolve resultados lexicais ordenados por relevância.
-- `buildKnowledgeContext(question, results, options)`: constrói o contexto compacto para o Agent Core.
-- `KNOWLEDGE_CATALOG`: catálogo validado.
-- `KNOWLEDGE_RECORD_COUNT`: total de registos.
-
-O contexto ainda não está ligado ao ciclo de geração. Essa ligação pertence à Fase 5.
+O catálogo é um snapshot de 2 de Novembro de 2026, não uma ligação em tempo real ao CMS.
 
 Consultar [docs/PHASE-4.md](docs/PHASE-4.md).
 
+## Fase 5: Agent Core
+
+Implementado em `src/agent/`:
+
+- Ciclo de conversação de turno único.
+- System Prompt versionado, v1.0.0.
+- Adaptação do Agent Core ao runtime WebLLM existente.
+- Perguntas validadas até 2.000 caracteres.
+- Histórico transitório limitado a 6 mensagens.
+- Recuperação lexical e filtro de relevância temática.
+- Recuperação de contexto em perguntas de seguimento.
+- Contexto limitado a 3.200 caracteres e 6 registos.
+- Abstenção determinística quando não existe evidência pública.
+- Saída JSON com 4 campos: status, answer, citationIds e followUpQuestion.
+- Validação Zod e allowlist de referências.
+- Rejeição de JSON inválido, citações desconhecidas, HTML e output acima de 12.000 caracteres.
+- Cancelamento propagado ao runtime local.
+
+O runtime aceita agora system prompt, limite de tokens, temperature e top-p controlados pela aplicação. O carregamento do modelo continua a ser explícito e executado no Worker.
+
+### Limites da validação
+
+A saída JSON é pedida pelo prompt e validada depois com Zod. Não está demonstrado constrained decoding para a combinação actual de modelo e WebLLM.
+
+A validação de citação confirma que o ID pertence ao conjunto recuperado. Não prova, por si só, que cada frase da resposta é semanticamente sustentada pela fonte. Essa avaliação depende de testes de factualidade com o Qwen3 real.
+
+O Agent Core ainda não está ligado à UI conversacional. Essa integração visual pertence à Fase 8.
+
+Consultar [docs/PHASE-5.md](docs/PHASE-5.md).
+
 ## Quality gates
 
-Último workflow de validação: [JARVIS quality gates, run 41473301298](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41473301298).
+Último workflow: [JARVIS quality gates, run 41489413842](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41489413842).
 
 Resultados:
 - TypeScript: aprovado.
 - ESLint: aprovado.
-- Vitest: 6 ficheiros, 39/39 testes aprovados.
+- Vitest: 10 ficheiros, 66/66 testes aprovados.
 - Build de produção: aprovado.
 - Playwright Chromium: 2/2 testes aprovados.
-- Lockfile: sincronizado e preservado.
+- Lockfile: preservado. Não foram adicionadas dependências.
 
-Estes testes validam código, catálogo, retrieval, contexto, build e smoke tests de browser. Não validam inferência WebGPU real nem qualidade de respostas geradas pelo Qwen3.
+### Tamanhos observados no build
+
+- Entrada JavaScript inicial: 323.85 KB, gzip 99.44 KB.
+- CSS: 8.93 KB, gzip 2.53 KB.
+- Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
+- Worker WebLLM: 6,121.59 KB.
+
+O build continua a assinalar chunks acima de 500 KB por causa do runtime WebLLM. O teste de browser verifica que os artefactos do modelo e os chunks do runtime não são solicitados na visita inicial.
+
+Estes resultados são de CI. Não representam desempenho ou inferência numa GPU física.
 
 ## Executar localmente
 
@@ -167,16 +189,18 @@ npm run test:e2e
 src/
 ├── app/          # shell técnica e painel de teste do motor local
 ├── domain/       # contratos de conversa
-├── knowledge/    # schema, catálogo, retrieval, contexto e testes
-├── runtime/      # WebLLM, Worker e ciclo de vida local
-├── actions/      # fronteira reservada para acções autorizadas
-└── platform/     # WebGPU e capacidades do browser
+├── knowledge/   # schema, catálogo, retrieval, contexto e testes
+├── agent/       # prompts, ciclo de conversação, modelo local e validação
+├── runtime/     # WebLLM, Worker e ciclo de vida local
+├── actions/     # fronteira reservada para acções autorizadas
+└── platform/    # WebGPU e capacidades do browser
 docs/
 ├── PHASE-0.md
 ├── PHASE-1.md
 ├── PHASE-2.md
 ├── PHASE-3.md
 ├── PHASE-4.md
+├── PHASE-5.md
 ├── ARCHITECTURE.md
 ├── DECISIONS.md
 ├── PORTFOLIO-DATA-AUDIT.md
@@ -189,11 +213,13 @@ docs/
 ## Limitações actuais
 
 - O modelo ainda não foi validado numa GPU física.
-- Não existe ainda benchmark real de tokens/s, memória GPU ou latência.
-- O contexto recuperado ainda não está ligado à geração.
+- Não existe benchmark real de tokens/s, memória GPU ou latência.
+- A obediência do modelo ao JSON e a qualidade factual ainda não foram medidas.
+- A validação de citações não garante entailment semântico.
 - A KB é um snapshot e precisa de nova auditoria quando o CMS mudar.
 - A biografia e os papéis por projecto continuam editorialmente pendentes.
-- Agent Core, Action Engine, memória, interface conversacional e integração não estão implementados.
+- Não existe UI conversacional completa.
+- Action Engine e memória persistente não estão implementados.
 - Não existe voz.
 - Não existe licença de software definida para o código próprio.
 
@@ -204,6 +230,7 @@ docs/
 - [Fase 2: fundação técnica](docs/PHASE-2.md)
 - [Fase 3: Local Intelligence Engine](docs/PHASE-3.md)
 - [Fase 4: Knowledge Engine](docs/PHASE-4.md)
+- [Fase 5: Agent Core](docs/PHASE-5.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)

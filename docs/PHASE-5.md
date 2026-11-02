@@ -1,7 +1,7 @@
 # Fase 5: Agent Core
 
 **Data:** 2 de Novembro de 2026  
-**Estado:** Implementação do Agent Core concluída. Validação automatizada pendente do workflow deste commit. Integração física com Qwen3 e avaliação de qualidade factual continuam pendentes.
+**Estado:** Implementação do Agent Core concluída e validada por CI. Aceitação integrada continua pendente de inferência física com Qwen3 e avaliação de qualidade factual.
 
 ## Objectivo
 
@@ -115,6 +115,26 @@ Foram preparados testes de:
 - Rejeição de histórico excessivo.
 
 Os testes de orquestração usam um adaptador determinístico de teste para testar o contrato do Agent Core. Não representam uma execução real do Qwen3 e não são usados como prova de desempenho ou qualidade do modelo.
+
+### Resultado CI
+
+Workflow [JARVIS quality gates, run 41489413842](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41489413842) concluído com sucesso:
+
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 10 ficheiros, 66/66 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 2/2 testes aprovados.
+- Lockfile: preservado. Não foram adicionadas dependências.
+
+### Tamanhos observados no build
+
+- Entrada JavaScript inicial: 323.85 KB, gzip 99.44 KB.
+- CSS: 8.93 KB, gzip 2.53 KB.
+- Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
+- Worker WebLLM: 6,121.59 KB.
+
+O aviso de chunks acima de 500 KB mantém-se devido ao runtime de inferência. O teste Playwright continua a verificar que os artefactos de modelo e os chunks WebLLM não são solicitados na visita inicial. O Agent Core ainda não está ligado à UI conversacional, que pertence à Fase 8.
 
 ## Pendente / bloqueado
 
