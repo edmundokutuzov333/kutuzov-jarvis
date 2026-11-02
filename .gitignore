@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+.playwright/
+test-results/
+playwright-report/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local model artifacts and caches
+.models/
+model-cache/
+.cache/
+*.safetensors
+*.gguf
+*.bin
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
