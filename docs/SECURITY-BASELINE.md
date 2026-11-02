@@ -60,3 +60,20 @@ A Fase 1/2 deverá transformar estes princípios em controlos técnicos verific�
 ## Limitações de validação
 
 A validação automatizada actual comprova detecção, estados, carregamento sob pedido e ausência de pedidos iniciais. Não comprova que um modelo foi carregado ou executado numa GPU física. O teste real deve registar browser, GPU, tamanho descarregado, memória, tempo de inicialização e resultado de geração.
+
+
+## Controlos do Agent Core (Fase 5)
+
+- System Prompt versionado e separado da Knowledge Base.
+- Pergunta, histórico e documentos recuperados são serializados como dados JSON, nunca concatenados ao System Prompt.
+- Histórico aceita apenas roles user/assistant e tem limites de quantidade e tamanho.
+- O modelo recebe apenas o contexto seleccionado pelo retrieval.
+- O modelo não recebe ferramentas nem autorização de navegação nesta fase.
+- Saída tem schema estrito, campos fechados, limite de tamanho e rejeição de HTML.
+- Resposta factual exige pelo menos uma citação.
+- Cada ID de citação é validado contra a allowlist de factos públicos recuperados.
+- Respostas sem evidência não recebem citações; são substituídas por uma abstenção determinística.
+- O streaming é recolhido internamente e não apresentado antes da validação final.
+- O pedido de geração é cancelável e os limites de tokens/temperatura/top-p são impostos pela aplicação.
+
+Estes controlos reduzem a superfície de risco, mas não provam que o modelo não possa produzir uma frase semanticamente incorrecta com uma fonte válida. A validação semântica e os testes adversariais no modelo real continuam pendentes para a Fase 9. Não afirmar invulnerabilidade a prompt injection.

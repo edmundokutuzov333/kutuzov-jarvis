@@ -3,13 +3,15 @@ import { LocalEnginePanel } from "./LocalEnginePanel";
 const systemStatus = [
   {
     label: "Knowledge Engine",
-    value: "Built, not connected",
-    detail: "Verified public snapshot and lexical retrieval are implemented. Conversation integration belongs to Phase 5.",
+    value: "Connected to Agent Core",
+    detail: "Lexical retrieval, evidence context and public source references feed the Agent Core.",
+    state: "IMPLEMENTED",
   },
   {
-    label: "Conversation memory",
-    value: "Not configured",
-    detail: "Local persistence will be implemented in Phase 7.",
+    label: "Agent Core",
+    value: "Implemented / model validation pending",
+    detail: "Versioned prompt, bounded conversation context, structured JSON validation, citation checks and deterministic abstention. UI integration belongs to Phase 8.",
+    state: "MODEL TEST PENDING",
   },
 ] as const;
 
@@ -24,28 +26,28 @@ export function App() {
         <div className="topbar__meta">
           <span className="status-dot" aria-hidden="true" />
           <span>INDEPENDENT BUILD</span>
-          <span className="topbar__phase">PHASE 03</span>
+          <span className="topbar__phase">PHASE 05</span>
         </div>
       </header>
 
       <section className="intro" aria-labelledby="intro-title">
-        <p className="eyebrow">PERSONAL INTELLIGENCE / LOCAL INFERENCE</p>
+        <p className="eyebrow">PERSONAL INTELLIGENCE / AGENT CORE</p>
         <h1 id="intro-title">
-          Intelligence stays
+          Knowledge into
           <br />
-          on your device.
+          grounded answers.
         </h1>
         <p className="intro__description">
-          JARVIS is a focused digital assistant for exploring Kutuzov&apos;s
-          professional work. The local language model is loaded only when you
-          choose to start it.
+          JARVIS retrieves verified information about Kutuzov, prepares a
+          bounded context and validates the local model&apos;s structured answer.
+          Inference remains on this device and starts only after you load the model.
         </p>
         <div className="foundation-note">
-          <span className="foundation-note__index">03 / 10</span>
+          <span className="foundation-note__index">05 / 10</span>
           <p>
-            No remote inference API. No dedicated AI server. The first model
-            load requires a compatible browser, WebGPU and a one-time download
-            of the model files.
+            No remote inference API. No dedicated AI server. The Agent Core
+            is implemented; physical model validation and the conversational
+            interface remain pending.
           </p>
         </div>
       </section>
@@ -54,8 +56,8 @@ export function App() {
 
       <section className="systems" aria-labelledby="systems-title">
         <div className="systems__heading">
-          <p className="eyebrow">NEXT SYSTEMS</p>
-          <h2 id="systems-title">Not active in this phase</h2>
+          <p className="eyebrow">CURRENT CORE SYSTEMS</p>
+          <h2 id="systems-title">Core implementation status</h2>
         </div>
         <div className="systems__grid systems__grid--two">
           {systemStatus.map((system, index) => (
@@ -64,7 +66,7 @@ export function App() {
                 <span className="system-card__number">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="system-card__state">PENDING</span>
+                <span className="system-card__state">{system.state}</span>
               </div>
               <h3>{system.label}</h3>
               <p className="system-card__value">{system.value}</p>

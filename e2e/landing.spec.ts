@@ -21,7 +21,7 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /intelligence stays on your device/i }),
+    page.getByRole("heading", { name: /knowledge into grounded answers/i }),
   ).toBeVisible();
   await expect(page.locator(".engine-status__value").first()).toHaveText("NOT CHECKED");
   await expect(

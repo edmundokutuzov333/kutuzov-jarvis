@@ -162,3 +162,22 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** registos públicos e guardrails editoriais têm visibilidade e estados de verificação distintos.  
 **Motivo:** a biografia, os papéis por projecto, as métricas e os scores de competências não podem ser apresentados sem as respectivas ressalvas.  
 **Consequência:** guardrails podem orientar a resposta, mas não entram nas referências de factos públicos nem são apresentados como conteúdo publicado.
+
+
+## ADR-0029: Agent Core de ciclo único
+**Estado:** Aceite e implementado  
+**Decisão:** usar uma função de orquestração única que valida a pergunta, recupera contexto, chama um único modelo local e valida uma resposta estruturada.  
+**Motivo:** manter o produto especializado e evitar arquitectura multiagente desnecessária.  
+**Consequência:** o ciclo pode ser testado e inspeccionado sem criar backend, ferramentas autónomas ou dependências novas.
+
+## ADR-0030: saída JSON com validação estrita após geração
+**Estado:** Aceite e implementado; compatibilidade física pendente  
+**Decisão:** instruir o modelo para devolver um JSON com status, answer, citationIds e followUpQuestion; validar com Zod e verificar IDs contra as referências recuperadas.  
+**Motivo:** não presumir suporte a constrained decoding ou function calling no modelo compacto escolhido.  
+**Consequência:** saídas inválidas são rejeitadas. Não há garantia semântica de entailment; a qualidade tem de ser avaliada com Qwen3 em equipamento real.
+
+## ADR-0031: contexto transitório e orçamento de geração do Agent Core
+**Estado:** Aceite e implementado  
+**Decisão:** limitar pergunta a 2.000 caracteres, histórico a 6 mensagens, contexto recuperado a 3.200 caracteres/6 registos, output do modelo a 12.000 caracteres e geração a 420 tokens como configuração inicial.  
+**Motivo:** reduzir prompt injection, custo de contexto e pressão sobre o modelo de 0.6B.  
+**Consequência:** histórico não é persistido. Perguntas de seguimento podem usar a última pergunta do visitante para reconstituir o assunto; persistência e eliminação continuam na Fase 7.

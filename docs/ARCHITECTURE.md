@@ -129,3 +129,24 @@ A Knowledge Base é um snapshot local do conteúdo público auditado, não uma l
 O contexto usa até 4.500 caracteres e 6 registos por omissão. As restrições sobre biografia, papéis por projecto, métricas e pontuações de competências ficam separadas dos factos publicados.
 
 A recuperação não executa inferência e pode ser testada sem WebGPU. O envio deste contexto ao Qwen3 e a validação de respostas fundamentadas pertencem ao Agent Core e continuam pendentes da prova física do runtime.
+
+
+## 12. Agent Core implementado na Fase 5
+
+O Agent Core em `src/agent/` implementa um único ciclo de resposta:
+
+- Valida a pergunta e o histórico com Zod.
+- Recupera informação no Knowledge Engine e rejeita correspondências baseadas apenas no nome da pessoa quando o tema não coincide.
+- Reconstrói o tópico de perguntas curtas de seguimento usando o histórico transitório recente.
+- Constrói um contexto com máximo de 3.200 caracteres e 6 registos.
+- Devolve abstenção determinística quando não encontra factos públicos.
+- Constrói um pedido JSON com pergunta, histórico não confiável e contexto recuperado.
+- Envia um System Prompt versionado ao adaptador local de WebLLM.
+- Recebe o streaming internamente, impõe um limite de 12.000 caracteres e valida a saída JSON com Zod.
+- Verifica se cada citação pertence ao conjunto de referências públicas recuperadas.
+
+O System Prompt define comportamento e regras. Não contém factos biográficos. O catálogo continua a ser a fonte factual.
+
+O adaptador `createLocalAgentModel` usa o runtime WebLLM existente. O runtime passou a aceitar system prompt e parâmetros limitados de geração, mantendo o carregamento sob pedido e o Worker.
+
+A validação é estrutural, não uma garantia semântica de entailment. Não há constrained decoding confirmado. A qualidade real do Qwen3, obediência JSON, português e factualidade só podem ser aprovados após geração física e benchmark.

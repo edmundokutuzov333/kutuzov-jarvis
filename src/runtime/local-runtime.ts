@@ -11,6 +11,13 @@ import { LOCAL_MODEL_APP_CONFIG, LOCAL_MODEL_ID } from "./model-config";
 export type RuntimeProgressHandler = (report: InitProgressReport) => void;
 export type RuntimeTokenHandler = (token: string) => void;
 
+export interface RuntimeGenerationOptions {
+  systemPrompt?: string;
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+}
+
 export class LocalRuntimeError extends Error {
   constructor(
     public readonly code:
@@ -209,6 +216,7 @@ export class LocalInferenceRuntime {
     prompt: string,
     onToken: RuntimeTokenHandler,
     externalSignal?: AbortSignal,
+    options: RuntimeGenerationOptions = {},
   ): Promise<{ cancelled: boolean }> {
     const engine = this.#engine;
     if (!engine) {
@@ -226,6 +234,23 @@ export class LocalInferenceRuntime {
     if (externalSignal?.aborted) {
       return { cancelled: true };
     }
+    if (
+      prompt.trim().length === 0 ||
+      prompt.length > 16_000 ||
+      (options.systemPrompt !== undefined && options.systemPrompt.length > 12_000)
+    ) {
+      throw new LocalRuntimeError(
+        "GENERATION_FAILED",
+        "O pedido excede os limites de contexto definidos para o modelo local.",
+      );
+    }
+
+    const requestedTokens = Number.isFinite(options.maxTokens) ? options.maxTokens ?? 120 : 120;
+    const requestedTemperature = Number.isFinite(options.temperature) ? options.temperature ?? 0.35 : 0.35;
+    const requestedTopP = Number.isFinite(options.topP) ? options.topP ?? 0.85 : 0.85;
+    const maxTokens = Math.max(32, Math.min(1_024, Math.floor(requestedTokens)));
+    const temperature = Math.max(0, Math.min(1, requestedTemperature));
+    const topP = Math.max(0.05, Math.min(1, requestedTopP));
 
     const controller = new AbortController();
     this.#generationController = controller;
@@ -244,6 +269,7 @@ export class LocalInferenceRuntime {
       {
         role: "system",
         content:
+          options.systemPrompt ??
           "És um motor local de geração de texto em fase de validação técnica. Responde de forma breve, clara e natural em português. Ainda não és o assistente final de Kutuzov e não deves afirmar que conheces dados pessoais ou profissionais que não tenham sido fornecidos nesta mensagem.",
       },
       { role: "user", content: prompt },
@@ -254,9 +280,9 @@ export class LocalInferenceRuntime {
         const stream = await engine.chat.completions.create({
           messages,
           stream: true,
-          temperature: 0.35,
-          top_p: 0.85,
-          max_tokens: 120,
+          temperature,
+          top_p: topP,
+          max_tokens: maxTokens,
         });
 
         for await (const chunk of stream as AsyncIterable<ChatCompletionChunk>) {
