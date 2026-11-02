@@ -58,3 +58,21 @@ npm ci --legacy-peer-deps
 ```
 
 O workflow verifica a existência do lockfile. Se faltar numa execução de push para `main`, gera-o e só o incorpora depois de todos os gates passarem. O lockfile também é preservado como artefacto do workflow.
+
+
+## Runtime de IA local
+
+| Pacote | Versão | Finalidade |
+|---|---:|---|
+| @mlc-ai/web-llm | 0.2.87 | Inferência local WebGPU e motor de chat no browser |
+
+WebLLM é importado dinamicamente e executado no Worker. A sua entrada não é acrescentada ao carregamento inicial da página. O lockfile fixa esta versão e as dependências transitivas.
+
+### Artefactos do modelo
+
+- Modelo: Qwen3-0.6B q4f16_1 MLC.
+- Peso listado no repositório MLC: cerca de 352 MB.
+- Biblioteca WebGPU MLC: cerca de 6.56 MB, fixada a um commit do repositório binário.
+- Estimativa WebLLM de VRAM: 1403.34 MB.
+
+Os artefactos do modelo não são dependências npm nem fazem parte do Git. São descarregados apenas depois da acção explícita do visitante.

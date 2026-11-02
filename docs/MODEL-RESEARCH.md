@@ -167,3 +167,43 @@ O modelo final só será aprovado depois destes testes.
 - Llama 3.2 official model card: https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD.md
 - Llama 3.2 1B MLC q4f16_1 artifact (705 MB): https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC/tree/main
 - SmolLM2-360M model card: https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct
+
+
+## 11. Actualização técnica da Fase 3: Qwen3 passou a prebuilt no WebLLM 0.2.87
+
+Durante a Fase 1, a configuração inspeccionada não apresentava o Qwen3-0.6B na lista prebuilt. Na preparação da Fase 3 foi consultada novamente a configuração do WebLLM 0.2.87. A entrada oficial de Qwen3-0.6B q4f16_1 está agora presente no catálogo prebuilt, com `modelVersion = v0_2_87/base`.
+
+### Modelo adoptado
+
+| Propriedade | Valor |
+|---|---|
+| Model ID | `Qwen3-0.6B-q4f16_1-MLC` |
+| Quantização | q4f16_1 |
+| Revisão dos pesos | `8c14ce481d4c692769976ad52afea453a102df19` |
+| Biblioteca | `Qwen3-0.6B-q4f16_1_cs1k-webgpu.wasm` |
+| Versão da biblioteca | `v0_2_87/base` |
+| Commit do repositório binário MLC | `146ed9cd4b4062e967b017fd2291f7106b50599f` |
+| Git blob da biblioteca | `bccc95f5fa0cac4a5bfa7a6305c6195eea23f7f7` |
+| Contexto | 4096 tokens |
+| VRAM estimada em WebLLM | 1403.34 MB |
+| `low_resource_required` | true |
+| Tamanho listado na página MLC | cerca de 352 MB |
+
+A implementação usa o modelo oficial MLC e a biblioteca oficial do catálogo WebLLM 0.2.87. A biblioteca comunitária SkillSafe, considerada durante a investigação, não é utilizada no runtime final.
+
+O SRI é aplicado à configuração do modelo e ao tokenizer. A biblioteca WASM é fixada por commit e Git blob do repositório binário MLC. O runtime não declara um SRI que não tenha sido medido para esse ficheiro.
+
+### Distribuição, não inferência remota
+
+Os pesos são descarregados do repositório Hugging Face MLC e a biblioteca WebGPU do repositório de binários MLC. Estas origens entregam ficheiros estáticos. A inferência ocorre no Worker do browser; perguntas e respostas não são enviadas para uma API de inferência.
+
+### Memória
+
+A estimativa de 1403.34 MB é o requisito publicado na configuração prebuilt do WebLLM para este perfil, não uma medição de memória livre num browser real. A aplicação apresenta limites do adaptador e trata falhas de inicialização/alocação.
+
+Fontes:
+- Configuração oficial WebLLM: https://github.com/mlc-ai/web-llm/blob/main/src/config.ts
+- Pacote WebLLM 0.2.87: https://www.npmjs.com/package/@mlc-ai/web-llm
+- Modelo MLC Qwen3: https://huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC
+- Revisão MLC: https://huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC/tree/8c14ce481d4c692769976ad52afea453a102df19
+- Binários MLC: https://github.com/mlc-ai/binary-mlc-llm-libs/commit/146ed9cd4b4062e967b017fd2291f7106b50599f

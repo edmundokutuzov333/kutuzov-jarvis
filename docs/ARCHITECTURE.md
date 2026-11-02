@@ -98,3 +98,19 @@ As pastas reservadas contêm apenas documentação de responsabilidade. Não rep
 A configuração de TypeScript é estrita e separa código da aplicação da toolchain Node. Vitest executa testes de domínio sem simular browser ou inferência. Playwright valida a aplicação no browser.
 
 A shell visual da Fase 2 é apenas uma fundação técnica e comunica que o modelo, a Knowledge Base e a memória ainda não estão activos.
+
+
+## 9. Local Intelligence Engine implementado na Fase 3
+
+O runtime local vive em `src/runtime/local-runtime.ts`, com Worker dedicado em `src/runtime/webllm.worker.ts`.
+
+- `src/platform/webgpu.ts` verifica contexto seguro, `navigator.gpu` e o adaptador.
+- WebLLM 0.2.87 é importado dinamicamente e inicializado com `CreateWebWorkerMLCEngine` num Worker.
+- O modelo oficial é Qwen3-0.6B q4f16_1, com pesos e biblioteca WebGPU fixados a revisões.
+- O contexto está limitado a 4096 tokens.
+- O runtime comunica progresso, streaming, cancelamento, limpeza de cache e unload.
+- A UI não carrega pesos nem chunks de runtime na visita inicial.
+
+A UI indica cerca de 352 MB de ficheiros listados e uma estimativa WebLLM de 1403.34 MB de VRAM. Estes valores não são medições num dispositivo real.
+
+A aceitação final depende de validar a carga e a geração num browser com GPU física. Consultar `docs/PHASE-3.md`.

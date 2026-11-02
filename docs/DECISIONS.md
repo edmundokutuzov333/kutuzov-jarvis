@@ -112,3 +112,34 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** fixar npm 11.21.1, gerar `package-lock.json` e incorporar o ficheiro na branch `main` apenas depois de os quality gates passarem. O CI utiliza `npm ci --legacy-peer-deps`.  
 **Motivo:** tornar a árvore transitiva verificável e reproduzível, sem inventar um lockfile nem o guardar apenas como artefacto temporário.  
 **Consequência:** o lockfile fica sob controlo de versão; o workflow regenera-o apenas quando falta e só o incorpora numa execução bem-sucedida de push para `main`.
+
+
+## ADR-0021: WebLLM 0.2.87 como runtime local
+**Estado:** Aceite e implementado  
+**Decisão:** utilizar `@mlc-ai/web-llm` na versão exacta 0.2.87, carregado dinamicamente e executado num Web Worker.  
+**Motivo:** inferência local em browser com WebGPU, sem servidor de inferência.  
+**Consequência:** o pacote de runtime fica fora da entrada inicial e só é importado por acções explícitas do visitante. Os chunks de runtime continuam a ser recursos de download e devem ser medidos separadamente.
+
+## ADR-0022: Qwen3-0.6B q4f16_1 MLC como modelo da prova
+**Estado:** Aceite para prova técnica; aprovação de produção pendente de hardware  
+**Decisão:** utilizar o Model ID oficial `Qwen3-0.6B-q4f16_1-MLC` que consta do catálogo prebuilt do WebLLM 0.2.87.  
+**Motivo:** modelo compacto, quantizado, integrado com a versão fixada do WebLLM e com licença upstream Apache 2.0.  
+**Consequência:** o download listado é cerca de 352 MB e a estimativa de VRAM publicada é 1403.34 MB. A compatibilidade real varia por browser e dispositivo.
+
+## ADR-0023: fixação de revisões dos artefactos MLC
+**Estado:** Aceite e implementado  
+**Decisão:** fixar o repositório de pesos Qwen3 na revisão `8c14ce481d4c692769976ad52afea453a102df19` e a biblioteca WebGPU no commit `146ed9cd4b4062e967b017fd2291f7106b50599f`. A configuração e o tokenizer são verificados com SRI.  
+**Motivo:** evitar referências móveis a `main` para os artefactos distribuídos.  
+**Consequência:** os ficheiros permanecem alojados em origens externas de distribuição, mas as revisões utilizadas pela aplicação são fixadas. As origens não executam inferência.
+
+## ADR-0024: compatibilidade real WebGPU não inferida de CI headless
+**Estado:** Aceite  
+**Decisão:** o CI valida o código, o build, o browser e a detecção de capacidade, mas não declara a inferência física aprovada.  
+**Motivo:** o ambiente Chromium headless do CI não representa um conjunto de GPUs e não mediu memória ou throughput real.  
+**Consequência:** a Fase 3 só fica aceite depois de carregar o modelo e gerar texto num dispositivo físico com WebGPU.
+
+## ADR-0025: retomada de geração não activada sem prova do modelo
+**Estado:** Pendente de investigação específica  
+**Decisão:** não activar resumable generation nesta fase.  
+**Motivo:** a documentação WebLLM indica que a funcionalidade depende de bibliotecas de modelo com primitivas de checkpoint e suporta apenas certos pedidos text-only. A biblioteca binária utilizada ainda não foi demonstrada como checkpoint-capable.  
+**Consequência:** o runtime suporta cancelamento e limpeza, mas não afirma retomar uma geração interrompida. Reavaliar após validar suporte do binário e definir a política de sessões.

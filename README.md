@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, trabalho e identidade profissional
 
 **Arquitectura:** browser-first, inteligência local, sem API de inferência remota e sem servidor dedicado.
 
-> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 concluída e validada por CI. O runtime de IA ainda não foi integrado.
+> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 concluída e validada por CI. Fase 3 implementada e validada por CI; falta validação real de inferência em GPU física.
 
 ## Objectivo
 
@@ -37,7 +37,7 @@ Não alterar o repositório oficial durante as fases independentes.
 | 0. Fundação do repositório | Concluída |
 | 1. Investigação e auditoria | Concluída com ressalva técnica |
 | 2. Fundação técnica | Concluída e validada |
-| 3. Motor de inteligência local | Não iniciada |
+| 3. Local Intelligence Engine | Implementada; validação real WebGPU pendente |
 | 4. Knowledge Engine | Não iniciada |
 | 5. Agent Core | Não iniciada |
 | 6. Action Engine | Não iniciada |
@@ -94,6 +94,20 @@ O workflow [JARVIS quality gates](https://github.com/edmundokutuzov333/kutuzov-j
 - Lockfile: gerado pelo workflow, utilizado no pipeline e incorporado na branch `main`.
 
 O `package-lock.json` está versionado. O workflow instala com `npm ci --legacy-peer-deps` e, quando um lockfile falta numa execução em `main`, gera-o e só o incorpora depois de todos os gates passarem.
+
+## Fase 3 / Local Intelligence Engine
+
+Integrado WebLLM 0.2.87 com o modelo oficial Qwen3-0.6B q4f16_1 MLC. O modelo e a biblioteca WebGPU têm revisões fixadas. O runtime é importado dinamicamente e inicializado num Web Worker apenas depois de o visitante escolher carregar o modelo.
+
+Implementados: detecção WebGPU e contexto seguro, apresentação de capacidades do adaptador, carregamento explícito, progresso, streaming, cancelamento, cache local, limpeza e unload do motor.
+
+O CI passou com 18 testes unitários e 2 testes Chromium. Os testes confirmam que a visita inicial e a verificação de compatibilidade não descarregam os ficheiros do modelo nem os chunks do runtime.
+
+**Modelo:** Qwen3-0.6B q4f16_1, contexto 4096, cerca de 352 MB de ficheiros listados e estimativa WebLLM de 1403.34 MB de VRAM. Os valores são publicados pelo MLC/WebLLM, não medições no equipamento do visitante.
+
+A aceitação final continua pendente de carregar o modelo e gerar texto num dispositivo físico com WebGPU. Não foi feito benchmark de tokens/s ou memória real. A Fase 4 não deve iniciar antes desta validação.
+
+[Consultar a documentação da Fase 3](docs/PHASE-3.md).
 
 ## Documentação
 

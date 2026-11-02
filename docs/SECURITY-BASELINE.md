@@ -44,3 +44,19 @@ Quando o modelo não puder ser utilizado, mostrar claramente que o visitante est
 
 ## Verificação futura
 A Fase 1/2 deverá transformar estes princípios em controlos técnicos verificáveis. A Fase 9 deverá testar os fluxos de privacidade e segurança.
+
+
+## Integridade e origem dos artefactos do modelo (Fase 3)
+
+- Fixar a revisão do repositório MLC que fornece os pesos.
+- Fixar o commit do repositório de bibliotecas MLC que fornece o WASM.
+- Verificar a configuração do modelo e o tokenizer por SRI antes de os aceitar.
+- Usar `onFailure: error` para a verificação SRI configurada.
+- Não usar URLs `main` para os ficheiros de pesos ou biblioteca fixados no runtime.
+- Tratar as origens Hugging Face e GitHub como distribuição de ficheiros estáticos. Não são serviços de inferência.
+- Não declarar verificação SHA-256 do WASM pelo runtime: a biblioteca é fixada por commit e Git blob do repositório MLC, mas não está configurado um SRI de conteúdo para esse ficheiro.
+- A cache do browser é best-effort. A opção de limpar cache elimina os artefactos WebLLM geridos pelo model ID.
+
+## Limitações de validação
+
+A validação automatizada actual comprova detecção, estados, carregamento sob pedido e ausência de pedidos iniciais. Não comprova que um modelo foi carregado ou executado numa GPU física. O teste real deve registar browser, GPU, tamanho descarregado, memória, tempo de inicialização e resultado de geração.
