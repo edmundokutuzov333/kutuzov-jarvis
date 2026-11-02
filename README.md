@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, trabalho e identidade profissional
 
 **Arquitectura:** browser-first, inteligência local, sem API de inferência remota e sem servidor dedicado.
 
-> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 implementada; validação CI e lockfile pendentes. O runtime de IA ainda não foi integrado.
+> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 concluída e validada por CI. O runtime de IA ainda não foi integrado.
 
 ## Objectivo
 
@@ -36,7 +36,7 @@ Não alterar o repositório oficial durante as fases independentes.
 |---|---|
 | 0. Fundação do repositório | Concluída |
 | 1. Investigação e auditoria | Concluída com ressalva técnica |
-| 2. Fundação técnica | Implementada; validação CI pendente |
+| 2. Fundação técnica | Concluída e validada |
 | 3. Motor de inteligência local | Não iniciada |
 | 4. Knowledge Engine | Não iniciada |
 | 5. Agent Core | Não iniciada |
@@ -58,16 +58,18 @@ Não alterar o repositório oficial durante as fases independentes.
 
 ## Fase 2 / Fundação técnica
 
-Criada uma aplicação independente com React 19, TypeScript estrito e Vite. Inclui configurações de lint, testes unitários, Playwright e GitHub Actions. A estrutura separa interface, domínio, conhecimento, runtime, acções e adaptadores de browser.
+Criada uma aplicação independente com React 19, TypeScript estrito e Vite. Inclui ESLint, Vitest, Playwright, GitHub Actions e lockfile npm versionado. A estrutura separa interface, domínio, conhecimento, runtime, acções e adaptadores de browser.
 
-O ecrã actual é apenas uma página técnica de fundação. Não existe ainda conversa, inferência local, Knowledge Base ou integração com o portefólio. Os estados apresentados identificam explicitamente os subsistemas não implementados.
+O contrato inicial de mensagem é validado com Zod e tem seis testes unitários. O smoke test do Playwright confirma que a aplicação abre no Chromium e identifica claramente os subsistemas que ainda não estão activos.
+
+O ecrã actual é apenas uma página técnica de fundação. Não existe ainda conversa funcional, inferência local, Knowledge Base, memória ou integração com o portefólio. Os estados apresentados identificam explicitamente os subsistemas não implementados.
 
 ### Executar localmente
 
-Requisitos: Node.js 22.12.0 ou superior.
+Requisitos: Node.js 22.12.0 ou superior e npm 11.21.1.
 
 ```bash
-npm install
+npm ci --legacy-peer-deps
 npm run dev
 ```
 
@@ -81,7 +83,17 @@ npm run build
 npm run test:e2e
 ```
 
-O workflow de CI executa os mesmos gates e prepara o lockfile npm. O lockfile ainda precisa de ser incorporado depois da primeira resolução de dependências no CI.
+### Validação CI
+
+O workflow [JARVIS quality gates](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41464575151) concluiu com sucesso:
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 1 ficheiro de testes, 6 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 1 teste de browser aprovado.
+- Lockfile: gerado pelo workflow, utilizado no pipeline e incorporado na branch `main`.
+
+O `package-lock.json` está versionado. O workflow instala com `npm ci --legacy-peer-deps` e, quando um lockfile falta numa execução em `main`, gera-o e só o incorpora depois de todos os gates passarem.
 
 ## Documentação
 
@@ -98,9 +110,9 @@ O workflow de CI executa os mesmos gates e prepara o lockfile npm. O lockfile ai
 - [Fronteira de integração](docs/INTEGRATION-CONTRACT.md)
 - [Regras para agentes de desenvolvimento](AGENTS.md)
 
-## Estado técnico
+## Estado técnico e limites
 
-A Fase 2 prepara a aplicação, mas não declara o modelo escolhido como funcional. O runtime de IA, os dados profissionais, a recuperação, a memória, as acções e a experiência conversacional serão adicionados nas fases previstas.
+A Fase 2 valida a fundação técnica, não o produto JARVIS final. WebLLM, WebGPU, pesos de modelos, Knowledge Base, retrieval, Agent Core, Action Engine, memória e interface conversacional continuam por implementar nas fases previstas.
 
 O portefólio oficial mantém-se independente e sem alterações.
 

@@ -1,9 +1,9 @@
 # Dependências da fundação técnica
 
 **Actualizado:** 2 de Novembro de 2026  
-**Fase:** 2
+**Fase:** 2, concluída e validada.
 
-As versões directas estão fixadas sem intervalos semver para evitar actualizações silenciosas. A instalação e resolução transitiva são verificadas pelo workflow GitHub Actions.
+As versões directas estão fixadas sem intervalos semver. A resolução transitiva fica registada em `package-lock.json`.
 
 ## Runtime
 
@@ -19,7 +19,7 @@ As versões directas estão fixadas sem intervalos semver para evitar actualiza�
 |---|---:|---|
 | vite | 8.3.5 | Servidor de desenvolvimento e build estático |
 | @vitejs/plugin-react | 6.1.2 | JSX e React Fast Refresh |
-| typescript | 5.9.3 | Verificação estática, em versão suportada pelo typescript-eslint consultado |
+| typescript | 5.9.3 | Verificação estática |
 | typescript-eslint | 8.72.1 | Parser e regras TypeScript para ESLint |
 | eslint | 10.14.0 | Análise estática |
 | @eslint/js | 10.0.1 | Regras base recomendadas |
@@ -40,10 +40,21 @@ As versões directas estão fixadas sem intervalos semver para evitar actualiza�
 - Bibliotecas de ícones e animação: não necessárias na fundação.
 - Backend e frameworks de servidor: fora da arquitectura aprovada.
 
-## Node
+## Node e npm
 
-O projecto declara Node.js >=22.12.0, alinhado com os requisitos actuais de Vite e Vitest. O workflow utiliza Node 22.16.0.
+- Node.js mínimo declarado: 22.12.0.
+- Node.js utilizado no workflow: 22.16.0.
+- npm fixado no workflow: 11.21.1.
+- O package.json declara `packageManager: npm@11.21.1`.
 
-## Lockfile
+## Lockfile e instalação reproduzível
 
-O workflow gera o package-lock.json se ainda não existir e preserva-o como artefacto. O ambiente de execução desta alteração não tinha acesso ao registry npm, por isso não foi possível gerar e verificar localmente um lockfile completo. A primeira execução do CI valida a resolução e disponibiliza o ficheiro para ser incorporado no repositório.
+O ficheiro `package-lock.json` está incorporado na branch `main`, com lockfileVersion 3 e 110,387 bytes no momento da validação. Foi gerado pelo workflow GitHub Actions e passou pela instalação `npm ci --legacy-peer-deps` no mesmo ciclo de validação.
+
+A execução local recomendada é:
+
+```bash
+npm ci --legacy-peer-deps
+```
+
+O workflow verifica a existência do lockfile. Se faltar numa execução de push para `main`, gera-o e só o incorpora depois de todos os gates passarem. O lockfile também é preservado como artefacto do workflow.
