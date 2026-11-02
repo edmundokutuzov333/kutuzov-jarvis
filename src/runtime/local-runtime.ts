@@ -149,7 +149,7 @@ export class LocalInferenceRuntime {
       });
     })();
 
-    let task: Promise<void>;
+    let task!: Promise<void>;
     task = (async () => {
       try {
         const engine = await Promise.race([
@@ -245,7 +245,7 @@ export class LocalInferenceRuntime {
       { role: "user", content: prompt },
     ];
 
-    let task: Promise<{ cancelled: boolean }>;
+    let task!: Promise<{ cancelled: boolean }>;
     task = (async () => {
       try {
         const stream = await engine.chat.completions.create({

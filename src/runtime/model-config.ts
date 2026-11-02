@@ -14,10 +14,12 @@ export const QWEN3_MODEL_RECORD = {
   model_id: LOCAL_MODEL_ID,
   model_lib:
     "https://huggingface.co/skillsafe-ai/qwen3-0.6b-q4f16/resolve/main/lib/Qwen3-0.6B-q4f16_1-ctx4k_cs1k-webgpu.wasm",
+  // prefill_chunk_size is required by this compiled artifact but is not yet
+  // represented in WebLLM's public ChatOptions type.
   overrides: {
     context_window_size: 4096,
     prefill_chunk_size: 1024,
-  },
+  } as ModelRecord["overrides"],
   integrity: {
     config: "sha256-GQpRxWuaB6jYchJm+ORZvNGxaJvN/ylHlc0r/6ID/y0=",
     model_lib: "sha256-elHP+ArV/hU54DOoO5p9JAlX0349jmIMa0NkirqQoMw=",
