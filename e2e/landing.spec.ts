@@ -1,15 +1,32 @@
 import { expect, test } from "@playwright/test";
 
-test("shows the independent JARVIS foundation without claiming AI is active", async ({
+test("keeps the local model unloaded until the visitor explicitly starts it", async ({
   page,
 }) => {
+  const modelRequests: string[] = [];
+  page.on("request", (request) => {
+    const url = request.url();
+    if (
+      url.includes("huggingface.co/skillsafe-ai/") ||
+      url.includes("models.skillsafe.ai")
+    ) {
+      modelRequests.push(url);
+    }
+  });
+
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /a focused system/i }),
+    page.getByRole("heading", { name: /intelligence stays on your device/i }),
   ).toBeVisible();
+  await expect(page.getByText("NOT CHECKED")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Check this device" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Load local model" }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/No remote inference API/i)).toHaveCount(0);
 
-  await expect(page.getByText("Not connected")).toBeVisible();
-  await expect(page.getByText("Not loaded")).toBeVisible();
-  await expect(page.getByText("Not configured")).toBeVisible();
+  expect(modelRequests).toHaveLength(0);
 });
