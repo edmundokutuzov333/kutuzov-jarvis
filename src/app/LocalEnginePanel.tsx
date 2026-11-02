@@ -58,23 +58,29 @@ export function LocalEnginePanel() {
     const result = await inspectWebGpu();
     setCapability(result);
 
+    setCacheStatus("unknown");
     if (result.status === "available") {
-      try {
-        const cached = await runtimeRef.current?.isModelCached();
-        setCacheStatus(cached ? "cached" : "not-cached");
-        setNotice(
-          cached
-            ? "Foram encontrados pesos do modelo na cache local. O browser pode removê-los mais tarde."
-            : "Não foram encontrados pesos completos na cache. O primeiro carregamento irá descarregar os artefactos.",
-        );
-      } catch {
-        setCacheStatus("error");
-        setNotice("Não foi possível consultar a cache. O carregamento poderá ainda funcionar.");
-      }
+      setNotice("WebGPU está disponível. O runtime e os ficheiros do modelo só serão carregados depois de escolher Load local model.");
       setStatus(runtimeRef.current?.isReady ? "ready" : "idle");
     } else {
-      setCacheStatus("unknown");
       setStatus("idle");
+    }
+  }
+
+  async function checkModelCache() {
+    setCacheStatus("checking");
+    setErrorMessage("");
+    try {
+      const cached = await runtimeRef.current?.isModelCached();
+      setCacheStatus(cached ? "cached" : "not-cached");
+      setNotice(
+        cached
+          ? "Foram encontrados pesos do modelo na cache local. O browser pode removê-los mais tarde."
+          : "Não foram encontrados pesos completos na cache. O carregamento terá de descarregar os artefactos.",
+      );
+    } catch (error) {
+      setCacheStatus("error");
+      setErrorMessage(getErrorMessage(error));
     }
   }
 
@@ -331,6 +337,11 @@ export function LocalEnginePanel() {
             >
               Check this device
             </button>
+            {capability?.status === "available" && status === "idle" ? (
+              <button className="button button--quiet" type="button" onClick={() => void checkModelCache()}>
+                Check local cache
+              </button>
+            ) : null}
             {canLoad ? (
               <button className="button button--primary" type="button" onClick={() => void loadModel()}>
                 Load local model
