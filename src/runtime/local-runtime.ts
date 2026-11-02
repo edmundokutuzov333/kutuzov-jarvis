@@ -149,8 +149,7 @@ export class LocalInferenceRuntime {
       });
     })();
 
-    let task!: Promise<void>;
-    task = (async () => {
+    const task = (async () => {
       try {
         const engine = await Promise.race([
           createEngineTask,
@@ -178,15 +177,17 @@ export class LocalInferenceRuntime {
           this.#worker = null;
         }
         throw normalizeRuntimeError(error);
-      } finally {
-        worker.removeEventListener("error", handleWorkerError);
-        worker.removeEventListener("messageerror", handleMessageError);
-        if (this.#loadOperation === operation) this.#rejectLoad = null;
-        if (this.#loadTask === task) this.#loadTask = null;
       }
     })();
 
     this.#loadTask = task;
+    const cleanupLoad = () => {
+      worker.removeEventListener("error", handleWorkerError);
+      worker.removeEventListener("messageerror", handleMessageError);
+      if (this.#loadOperation === operation) this.#rejectLoad = null;
+      if (this.#loadTask === task) this.#loadTask = null;
+    };
+    void task.then(cleanupLoad, cleanupLoad);
     return task;
   }
 
@@ -245,8 +246,7 @@ export class LocalInferenceRuntime {
       { role: "user", content: prompt },
     ];
 
-    let task!: Promise<{ cancelled: boolean }>;
-    task = (async () => {
+    const task = (async () => {
       try {
         const stream = await engine.chat.completions.create({
           messages,
@@ -270,17 +270,19 @@ export class LocalInferenceRuntime {
           "O modelo não conseguiu concluir a geração. Pode tentar novamente.",
           { cause: error },
         );
-      } finally {
-        externalSignal?.removeEventListener("abort", relayAbort);
-        controller.signal.removeEventListener("abort", interrupt);
-        if (this.#generationController === controller) {
-          this.#generationController = null;
-        }
-        if (this.#generationTask === task) this.#generationTask = null;
       }
     })();
 
     this.#generationTask = task;
+    const cleanupGeneration = () => {
+      externalSignal?.removeEventListener("abort", relayAbort);
+      controller.signal.removeEventListener("abort", interrupt);
+      if (this.#generationController === controller) {
+        this.#generationController = null;
+      }
+      if (this.#generationTask === task) this.#generationTask = null;
+    };
+    void task.then(cleanupGeneration, cleanupGeneration);
     return task;
   }
 
