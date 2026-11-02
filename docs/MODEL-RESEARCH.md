@@ -164,5 +164,6 @@ O modelo final só será aprovado depois destes testes.
 - Qwen3-0.6B model card: https://huggingface.co/Qwen/Qwen3-0.6B
 - Qwen3 MLC q4f16_1: https://huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC
 - Browser-ready Qwen3 artifact: https://huggingface.co/skillsafe-ai/qwen3-0.6b-q4f16
-- Llama 3.2 official model card: https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD.md\n- Llama 3.2 1B MLC q4f16_1 artifact (705 MB): https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC/tree/main
+- Llama 3.2 official model card: https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/MODEL_CARD.md
+- Llama 3.2 1B MLC q4f16_1 artifact (705 MB): https://huggingface.co/mlc-ai/Llama-3.2-1B-Instruct-q4f16_1-MLC/tree/main
 - SmolLM2-360M model card: https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct
