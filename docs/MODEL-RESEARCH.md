@@ -73,12 +73,13 @@ O Qwen3-0.6B não aparece na configuração prebuilt actual do WebLLM. O artefac
 
 Antes de utilizar publicamente:
 1. Validar a origem do repositório SkillSafe e a licença do conversor.
-2. Fixar os commits exactos do modelo e do artefacto.
-3. Verificar todos os hashes SHA-256 no processo de build.
-4. Reproduzir a compilação, ou documentar o risco de usar o wasm comunitário.
-5. Confirmar comportamento com a versão exacta do pacote WebLLM escolhida.
-6. Testar respostas em português e comandos estruturados.
-7. Medir tráfego total, VRAM, tempo de carregamento e geração.
+2. Confirmar a cadeia de distribuição: o cartão identifica os ficheiros registry como shards de parâmetros servidos por models.skillsafe.ai depois de serem validados. Isto introduz um fornecedor externo de artefactos, embora não seja um serviço de inferência.
+3. Fixar os commits exactos do modelo e do artefacto.
+4. Verificar todos os hashes SHA-256 no processo de build.
+5. Reproduzir a compilação e alojar os artefactos num domínio controlado, ou documentar explicitamente o risco de depender do wasm/registry comunitário.
+6. Confirmar comportamento com a versão exacta do pacote WebLLM escolhida.
+7. Testar respostas em português e comandos estruturados.
+8. Medir tráfego total, VRAM, tempo de carregamento e geração.
 
 Não descarregar o modelo automaticamente nem alojar os pesos no Git.
 
