@@ -94,3 +94,22 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** não fixar uma biografia final a partir de uma única fonte estática enquanto o CMS profile_content.biography estiver vazio e existir conteúdo rich_text/fallback divergente.  
 **Motivo:** evitar apresentar como versão oficial uma biografia que o CMS não publicou no campo próprio.  
 **Consequência:** a biografia necessita de confirmação editorial antes de entrar como facto permanente na Knowledge Base.
+
+
+## ADR-0018: fundação React, TypeScript e Vite
+**Estado:** Aceite  
+**Decisão:** construir a aplicação independente como aplicação estática React + TypeScript + Vite.  
+**Motivo:** uma base pequena, tipada, compilável e preparada para execução browser-first, sem introduzir backend.  
+**Consequência:** Vite produz os artefactos estáticos; React não carrega WebLLM nesta fase; os módulos de runtime, knowledge, actions e platform mantêm fronteiras separadas.
+
+## ADR-0019: TypeScript estrito e validação de contratos
+**Estado:** Aceite  
+**Decisão:** utilizar TypeScript strict com verificações adicionais e Zod para validar estruturas de domínio.  
+**Motivo:** detectar inconsistências cedo e evitar confiar em dados externos ou em saídas não verificadas.  
+**Consequência:** contratos de mensagens são definidos antes do Agent Core e testados sem dependência do browser.
+
+## ADR-0020: lockfile gerado no primeiro CI
+**Estado:** Pendente de fecho operacional  
+**Decisão:** as versões directas são fixadas exactamente em package.json; o workflow gera e disponibiliza package-lock.json na primeira execução.  
+**Motivo:** o ambiente de preparação não teve acesso ao registry npm para resolução transitiva local.  
+**Consequência:** a Fase 2 só fica validada depois de o workflow resolver as dependências, passar os gates e o lockfile ser incorporado e revisto no repositório.

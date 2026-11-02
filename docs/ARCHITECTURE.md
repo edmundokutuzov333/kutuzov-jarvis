@@ -79,3 +79,22 @@ A auditoria do CMS encontrou 4 projectos publicados, 20 clientes visíveis e dis
 - Reconciliação editorial da biografia e das funções por projecto.
 
 Nenhuma destas questões deve ser resolvida por suposição.
+
+
+## 8. Organização técnica implementada na Fase 2
+
+A aplicação independente utiliza React, TypeScript e Vite. O código está separado por fronteiras de responsabilidade:
+
+- `src/app/`: entry point visual e estilos da aplicação.
+- `src/domain/`: contratos tipados independentes de browser e UI. O contrato inicial define mensagens de conversa com Zod.
+- `src/knowledge/`: fronteira reservada para os registos profissionais verificados e retrieval.
+- `src/runtime/`: fronteira reservada para WebLLM, workers e ciclo de vida do modelo.
+- `src/actions/`: fronteira reservada para o registry fechado de acções.
+- `src/platform/`: fronteira reservada para capacidades do browser, persistência local e adaptação anfitriã.
+- `e2e/`: testes de browser com Playwright.
+
+As pastas reservadas contêm apenas documentação de responsabilidade. Não representam funcionalidades já implementadas.
+
+A configuração de TypeScript é estrita e separa código da aplicação da toolchain Node. Vitest executa testes de domínio sem simular browser ou inferência. Playwright valida a aplicação no browser.
+
+A shell visual da Fase 2 é apenas uma fundação técnica e comunica que o modelo, a Knowledge Base e a memória ainda não estão activos.

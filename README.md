@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, trabalho e identidade profissional
 
 **Arquitectura:** browser-first, inteligência local, sem API de inferência remota e sem servidor dedicado.
 
-> Estado: Fase 0 concluída. Fase 1 de investigação e auditoria concluída com ressalva técnica. A aplicação ainda não foi implementada.
+> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 implementada; validação CI e lockfile pendentes. O runtime de IA ainda não foi integrado.
 
 ## Objectivo
 
@@ -26,9 +26,9 @@ O sistema será especializado numa única pessoa. Não é um assistente geral ne
 ## Repositórios
 
 - Este projecto: [edmundokutuzov333/kutuzov-jarvis](https://github.com/edmundokutuzov333/kutuzov-jarvis)
-- Portefólio oficial, apenas como fonte de referência durante a investigação: [edmundokutuzov333/kutuzovportfolio333](https://github.com/edmundokutuzov333/kutuzovportfolio333)
+- Portefólio oficial, apenas como fonte de referência durante o desenvolvimento independente: [edmundokutuzov333/kutuzovportfolio333](https://github.com/edmundokutuzov333/kutuzovportfolio333)
 
-Não alterar o repositório oficial durante as fases de desenvolvimento independente.
+Não alterar o repositório oficial durante as fases independentes.
 
 ## Estado das fases
 
@@ -36,7 +36,7 @@ Não alterar o repositório oficial durante as fases de desenvolvimento independ
 |---|---|
 | 0. Fundação do repositório | Concluída |
 | 1. Investigação e auditoria | Concluída com ressalva técnica |
-| 2. Fundação técnica | Próxima |
+| 2. Fundação técnica | Implementada; validação CI pendente |
 | 3. Motor de inteligência local | Não iniciada |
 | 4. Knowledge Engine | Não iniciada |
 | 5. Agent Core | Não iniciada |
@@ -56,10 +56,39 @@ Não alterar o repositório oficial durante as fases de desenvolvimento independ
 - Qwen3-0.6B q4f16_1 definido como primeiro candidato a prova; Llama 3.2 1B q4f16_1 mantido como baseline.
 - O modelo final ainda não foi aprovado. Falta prova técnica e benchmark em browsers/equipamentos reais.
 
+## Fase 2 / Fundação técnica
+
+Criada uma aplicação independente com React 19, TypeScript estrito e Vite. Inclui configurações de lint, testes unitários, Playwright e GitHub Actions. A estrutura separa interface, domínio, conhecimento, runtime, acções e adaptadores de browser.
+
+O ecrã actual é apenas uma página técnica de fundação. Não existe ainda conversa, inferência local, Knowledge Base ou integração com o portefólio. Os estados apresentados identificam explicitamente os subsistemas não implementados.
+
+### Executar localmente
+
+Requisitos: Node.js 22.12.0 ou superior.
+
+```bash
+npm install
+npm run dev
+```
+
+### Verificações
+
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+npm run test:e2e
+```
+
+O workflow de CI executa os mesmos gates e prepara o lockfile npm. O lockfile ainda precisa de ser incorporado depois da primeira resolução de dependências no CI.
+
 ## Documentação
 
 - [Fase 0: fundação](docs/PHASE-0.md)
 - [Fase 1: investigação e auditoria](docs/PHASE-1.md)
+- [Fase 2: fundação técnica](docs/PHASE-2.md)
+- [Dependências e versões](docs/DEPENDENCIES.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)
@@ -69,15 +98,11 @@ Não alterar o repositório oficial durante as fases de desenvolvimento independ
 - [Fronteira de integração](docs/INTEGRATION-CONTRACT.md)
 - [Regras para agentes de desenvolvimento](AGENTS.md)
 
-## Estado técnico actual
+## Estado técnico
 
-A Fase 1 foi de investigação, não de implementação. Ainda não existe aplicação React/Vite, não foi instalada qualquer dependência, não foi descarregado qualquer modelo e não foi executado benchmark no browser.
+A Fase 2 prepara a aplicação, mas não declara o modelo escolhido como funcional. O runtime de IA, os dados profissionais, a recuperação, a memória, as acções e a experiência conversacional serão adicionados nas fases previstas.
 
-A ressalva técnica é intencional: o primeiro candidato identificado ainda precisa de uma prova WebLLM e de testes em equipamento real. Não apresentar o modelo como aprovado antes desses testes.
-
-## Próximo passo
-
-**Fase 2: fundação técnica.** Criar a aplicação React/TypeScript/Vite, configurar testes, lint e build, definir contratos tipados e preparar a estrutura modular, mantendo o runtime de IA fora do bundle inicial.
+O portefólio oficial mantém-se independente e sem alterações.
 
 ## Licença
 
