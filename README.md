@@ -1,70 +1,148 @@
 # Kutuzov JARVIS
 
-Assistente digital especializado no percurso, trabalho e identidade profissional de Kutuzov.
+Assistente digital especializado no percurso, identidade profissional, experiência, projectos, competências, serviços e filosofia criativa de Edmundo Kutuzov.
 
-**Arquitectura:** browser-first, inteligência local, sem API de inferência remota e sem servidor dedicado.
+**Arquitectura:** browser-first, inteligência local, WebGPU, sem API de inferência remota e sem servidor dedicado.
 
-> Estado: Fase 0 concluída. Fase 1 concluída com ressalva técnica. Fase 2 concluída e validada por CI. Fase 3 implementada e validada por CI; falta validação real de inferência em GPU física.
+> **Estado actual:** Fases 0, 1 e 2 concluídas. Fase 3 implementada e validada por CI, mas sem aceitação física WebGPU. Fase 4 implementada e validada por CI; a integração com o modelo local e a aceitação integrada continuam pendentes. Fases 5 a 10 ainda não iniciadas.
 
 ## Objectivo
 
-O JARVIS deverá ajudar os visitantes do portefólio de Kutuzov a conhecer o seu percurso profissional, explorar projectos, compreender competências e serviços e navegar pelo conteúdo através de uma interface conversacional.
+O JARVIS é um assistente digital especializado numa única pessoa. Deve ajudar os visitantes a conhecer o percurso profissional de Kutuzov, explorar projectos, compreender competências e serviços e, em fases posteriores, navegar pelo portefólio através de acções autorizadas.
 
-O sistema será especializado numa única pessoa. Não é um assistente geral nem uma plataforma multiagente.
+Não é um chatbot genérico, um sistema multiagente ou um clone do ChatGPT.
 
-## Princípios
+## Princípios obrigatórios
 
-- **Local-first:** a inferência deverá ocorrer no dispositivo do visitante através de WebGPU, quando suportado.
-- **Sem API de IA:** não utilizar OpenAI, Gemini, Claude ou outro serviço remoto de inferência.
-- **Leve por concepção:** carregar o motor e os pesos do modelo apenas quando o visitante iniciar o assistente.
-- **Conhecimento fundamentado:** respostas profissionais devem apoiar-se em informação verificada e identificável.
-- **Acções limitadas:** o modelo pode propor comandos, mas a aplicação valida e executa apenas acções autorizadas.
-- **Privacidade:** o histórico fica no dispositivo e é controlado pelo visitante.
-- **Fallback honesto:** sem WebGPU ou modelo disponível, oferecer pesquisa e navegação determinística sem fingir que existe IA.
-- **Integração posterior:** o portefólio oficial permanece separado até o JARVIS independente ser testado e aprovado.
+- **Local-first:** a inferência ocorre no dispositivo do visitante através de WebGPU, quando suportado.
+- **Zero AI API:** não enviar perguntas ou respostas para OpenAI, Gemini, Claude ou qualquer serviço remoto de inferência.
+- **Sem backend de IA:** não depender de servidor dedicado, computador de Kutuzov ou base de dados remota.
+- **Carregamento explícito:** runtime e pesos do modelo só são carregados após acção do visitante.
+- **Factualidade:** a Knowledge Base é a fonte de verdade; cada facto tem origem e estado editorial.
+- **Acções limitadas:** o modelo propõe; a aplicação valida schemas e autoriza handlers registados.
+- **Privacidade:** histórico futuro permanece local e tem de ser eliminável.
+- **Fallback honesto:** sem modelo, disponibilizar pesquisa determinística, sem fingir que existe inferência.
+- **Independência:** o portefólio oficial não é alterado durante as fases independentes.
 
 ## Repositórios
 
-- Este projecto: [edmundokutuzov333/kutuzov-jarvis](https://github.com/edmundokutuzov333/kutuzov-jarvis)
-- Portefólio oficial, apenas como fonte de referência durante o desenvolvimento independente: [edmundokutuzov333/kutuzovportfolio333](https://github.com/edmundokutuzov333/kutuzovportfolio333)
+- JARVIS: [edmundokutuzov333/kutuzov-jarvis](https://github.com/edmundokutuzov333/kutuzov-jarvis)
+- Portefólio oficial, fonte de referência read-only: [edmundokutuzov333/kutuzovportfolio333](https://github.com/edmundokutuzov333/kutuzovportfolio333)
 
-Não alterar o repositório oficial durante as fases independentes.
+O repositório oficial do portefólio mantém-se separado e não foi alterado nesta fase.
 
 ## Estado das fases
 
 | Fase | Estado |
 |---|---|
 | 0. Fundação do repositório | Concluída |
-| 1. Investigação e auditoria | Concluída com ressalva técnica |
-| 2. Fundação técnica | Concluída e validada |
-| 3. Local Intelligence Engine | Implementada; validação real WebGPU pendente |
-| 4. Knowledge Engine | Não iniciada |
+| 1. Investigação e auditoria | Concluída, com pontos editoriais pendentes |
+| 2. Fundação técnica | Concluída e validada por CI |
+| 3. Local Intelligence Engine | Implementada e validada por CI; teste real em GPU física pendente |
+| 4. Knowledge Engine | Implementada e validada por CI; integração e aceitação com modelo pendentes |
 | 5. Agent Core | Não iniciada |
 | 6. Action Engine | Não iniciada |
 | 7. Memória e privacidade | Não iniciada |
-| 8. Interface | Não iniciada |
-| 9. Testes e optimização | Não iniciada |
+| 8. Interface conversacional | Não iniciada |
+| 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-## Resultados da Fase 1
+A implementação de retrieval da Fase 4 pôde avançar separadamente porque é determinística e não inicializa nem depende do WebLLM. Isto não elimina o bloqueio de aceitação física da Fase 3 nem comprova respostas reais do modelo com a Knowledge Base.
 
-- Auditoria do OpenJarvis e dos componentes que vale a pena aproveitar conceptualmente.
-- Auditoria read-only do portefólio e do CMS publicado.
-- Identificação de 4 projectos publicados e 20 clientes visíveis no snapshot consultado.
-- Identificação de discrepâncias na biografia e ausência de papel por projecto.
-- Investigação de WebLLM, WebGPU, cache, modelos e licenças.
-- Qwen3-0.6B q4f16_1 definido como primeiro candidato a prova; Llama 3.2 1B q4f16_1 mantido como baseline.
-- O modelo final ainda não foi aprovado. Falta prova técnica e benchmark em browsers/equipamentos reais.
+## Fase 1: investigação e auditoria
 
-## Fase 2 / Fundação técnica
+Concluída a auditoria conceptual do OpenJarvis e a auditoria read-only do repositório/CMS do portefólio.
 
-Criada uma aplicação independente com React 19, TypeScript estrito e Vite. Inclui ESLint, Vitest, Playwright, GitHub Actions e lockfile npm versionado. A estrutura separa interface, domínio, conhecimento, runtime, acções e adaptadores de browser.
+O CMS público foi identificado como primeira fonte de verdade. O snapshot consultado em 2 de Novembro de 2026 registou:
+- 4 projectos publicados.
+- 20 clientes/marcas visíveis.
+- 5 experiências profissionais.
+- 5 competências.
+- 5 serviços.
+- 3 grupos de disciplinas.
+- 4 princípios.
+- 4 etapas de processo.
+- 5 métricas publicadas.
 
-O contrato inicial de mensagem é validado com Zod e tem seis testes unitários. O smoke test do Playwright confirma que a aplicação abre no Chromium e identifica claramente os subsistemas que ainda não estão activos.
+Foram identificadas discrepâncias editoriais na biografia e ausência de um campo de papel individual por projecto. Os detalhes e limites estão em [docs/PORTFOLIO-DATA-AUDIT.md](docs/PORTFOLIO-DATA-AUDIT.md).
 
-O ecrã actual é apenas uma página técnica de fundação. Não existe ainda conversa funcional, inferência local, Knowledge Base, memória ou integração com o portefólio. Os estados apresentados identificam explicitamente os subsistemas não implementados.
+## Fase 2: fundação técnica
 
-### Executar localmente
+Aplicação independente em React 19, TypeScript estrito e Vite. Inclui Zod, ESLint, Vitest, Playwright, GitHub Actions e lockfile npm versionado.
+
+O projecto mantém separação entre interface, domínio, knowledge, runtime, actions e platform. O pipeline utiliza `npm ci --legacy-peer-deps`.
+
+## Fase 3: Local Intelligence Engine
+
+Implementado:
+- WebLLM 0.2.87, fixado como dependência.
+- Modelo de prova Qwen3-0.6B q4f16_1 MLC.
+- Verificação de contexto seguro e detecção WebGPU.
+- Importação dinâmica de WebLLM.
+- Worker dedicado.
+- Carregamento sob pedido e progresso.
+- Streaming, cancelamento e tratamento de erros.
+- Consulta e limpeza da cache.
+- Libertação do modelo da memória GPU.
+
+**Modelo de prova:** `Qwen3-0.6B-q4f16_1-MLC`, contexto 4096. Os ficheiros do modelo estão listados em cerca de 352 MB e a configuração WebLLM apresenta uma estimativa de 1403.34 MB de memória GPU. Estes números ainda não foram medidos num dispositivo real.
+
+**Pendente para aceitação:** descarregar e inicializar o modelo num browser com GPU física, gerar texto até ao fim, medir download, tempo de inicialização, tempo até primeiro token, tokens/s, memória e comportamento num dispositivo limitado. O Chromium headless do CI não prova inferência física.
+
+Consultar [docs/PHASE-3.md](docs/PHASE-3.md).
+
+## Fase 4: Knowledge Engine
+
+Implementado em `src/knowledge/`, sem adicionar dependências:
+
+- Schema Zod versionado para catálogo, registos, fontes, visibilidade e verificação.
+- Snapshot local de **61 registos**: 57 factos públicos e 4 restrições editoriais internas.
+- Identificadores locais estáveis, metadados, origem e data de captura.
+- Pesquisa lexical com normalização de acentos e pontuação.
+- Sinónimos português/inglês.
+- Ranking por título, entidades, palavras-chave, conteúdo e metadados.
+- Filtros por categoria.
+- Contexto JSON compacto com factos, restrições, referências, estado de evidência e truncagem.
+- Orçamento predefinido de 4.500 caracteres e 6 registos por contexto.
+
+### O que a Knowledge Base contém
+
+Os factos públicos abrangem identidade e posicionamento, experiência, projectos, clientes, serviços, competências, disciplinas, princípios, processo e métricas publicadas.
+
+Os quatro guardrails editoriais impedem que o sistema:
+1. Apresente uma biografia consolidada antes de reconciliação.
+2. Atribua funções individuais aos projectos sem confirmação.
+3. Descreva métricas do portefólio como auditorias externas.
+4. Trate scores de competências como certificações ou avaliações independentes.
+
+Os IDs são locais ao JARVIS. Não representam UUIDs originais do CMS. O catálogo é um snapshot de 2 de Novembro de 2026, não uma ligação em tempo real ao CMS.
+
+### API do Knowledge Engine
+
+- `searchKnowledge(query, options)`: devolve resultados lexicais ordenados por relevância.
+- `buildKnowledgeContext(question, results, options)`: constrói o contexto compacto para o Agent Core.
+- `KNOWLEDGE_CATALOG`: catálogo validado.
+- `KNOWLEDGE_RECORD_COUNT`: total de registos.
+
+O contexto ainda não está ligado ao ciclo de geração. Essa ligação pertence à Fase 5.
+
+Consultar [docs/PHASE-4.md](docs/PHASE-4.md).
+
+## Quality gates
+
+Último workflow de validação: [JARVIS quality gates, run 41473301298](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41473301298).
+
+Resultados:
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 6 ficheiros, 39/39 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 2/2 testes aprovados.
+- Lockfile: sincronizado e preservado.
+
+Estes testes validam código, catálogo, retrieval, contexto, build e smoke tests de browser. Não validam inferência WebGPU real nem qualidade de respostas geradas pelo Qwen3.
+
+## Executar localmente
 
 Requisitos: Node.js 22.12.0 ou superior e npm 11.21.1.
 
@@ -73,7 +151,7 @@ npm ci --legacy-peer-deps
 npm run dev
 ```
 
-### Verificações
+Verificações:
 
 ```bash
 npm run typecheck
@@ -83,53 +161,58 @@ npm run build
 npm run test:e2e
 ```
 
-### Validação CI
+## Estrutura relevante
 
-O workflow [JARVIS quality gates](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41464575151) concluiu com sucesso:
-- TypeScript: aprovado.
-- ESLint: aprovado.
-- Vitest: 1 ficheiro de testes, 6 testes aprovados.
-- Build de produção: aprovado.
-- Playwright Chromium: 1 teste de browser aprovado.
-- Lockfile: gerado pelo workflow, utilizado no pipeline e incorporado na branch `main`.
+```text
+src/
+├── app/          # shell técnica e painel de teste do motor local
+├── domain/       # contratos de conversa
+├── knowledge/    # schema, catálogo, retrieval, contexto e testes
+├── runtime/      # WebLLM, Worker e ciclo de vida local
+├── actions/      # fronteira reservada para acções autorizadas
+└── platform/     # WebGPU e capacidades do browser
+docs/
+├── PHASE-0.md
+├── PHASE-1.md
+├── PHASE-2.md
+├── PHASE-3.md
+├── PHASE-4.md
+├── ARCHITECTURE.md
+├── DECISIONS.md
+├── PORTFOLIO-DATA-AUDIT.md
+├── OPENJARVIS-AUDIT.md
+├── MODEL-RESEARCH.md
+├── SECURITY-BASELINE.md
+└── INTEGRATION-CONTRACT.md
+```
 
-O `package-lock.json` está versionado. O workflow instala com `npm ci --legacy-peer-deps` e, quando um lockfile falta numa execução em `main`, gera-o e só o incorpora depois de todos os gates passarem.
+## Limitações actuais
 
-## Fase 3 / Local Intelligence Engine
-
-Integrado WebLLM 0.2.87 com o modelo oficial Qwen3-0.6B q4f16_1 MLC. O modelo e a biblioteca WebGPU têm revisões fixadas. O runtime é importado dinamicamente e inicializado num Web Worker apenas depois de o visitante escolher carregar o modelo.
-
-Implementados: detecção WebGPU e contexto seguro, apresentação de capacidades do adaptador, carregamento explícito, progresso, streaming, cancelamento, cache local, limpeza e unload do motor.
-
-O CI passou com 18 testes unitários e 2 testes Chromium. Os testes confirmam que a visita inicial e a verificação de compatibilidade não descarregam os ficheiros do modelo nem os chunks do runtime.
-
-**Modelo:** Qwen3-0.6B q4f16_1, contexto 4096, cerca de 352 MB de ficheiros listados e estimativa WebLLM de 1403.34 MB de VRAM. Os valores são publicados pelo MLC/WebLLM, não medições no equipamento do visitante.
-
-A aceitação final continua pendente de carregar o modelo e gerar texto num dispositivo físico com WebGPU. Não foi feito benchmark de tokens/s ou memória real. A Fase 4 não deve iniciar antes desta validação.
-
-[Consultar a documentação da Fase 3](docs/PHASE-3.md).
+- O modelo ainda não foi validado numa GPU física.
+- Não existe ainda benchmark real de tokens/s, memória GPU ou latência.
+- O contexto recuperado ainda não está ligado à geração.
+- A KB é um snapshot e precisa de nova auditoria quando o CMS mudar.
+- A biografia e os papéis por projecto continuam editorialmente pendentes.
+- Agent Core, Action Engine, memória, interface conversacional e integração não estão implementados.
+- Não existe voz.
+- Não existe licença de software definida para o código próprio.
 
 ## Documentação
 
 - [Fase 0: fundação](docs/PHASE-0.md)
-- [Fase 1: investigação e auditoria](docs/PHASE-1.md)
+- [Fase 1: investigação e auditorias](docs/PHASE-1.md)
 - [Fase 2: fundação técnica](docs/PHASE-2.md)
-- [Dependências e versões](docs/DEPENDENCIES.md)
+- [Fase 3: Local Intelligence Engine](docs/PHASE-3.md)
+- [Fase 4: Knowledge Engine](docs/PHASE-4.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)
-- [Auditoria do CMS e do portefólio](docs/PORTFOLIO-DATA-AUDIT.md)
+- [Auditoria do CMS e portefólio](docs/PORTFOLIO-DATA-AUDIT.md)
 - [Pesquisa WebLLM e modelos](docs/MODEL-RESEARCH.md)
 - [Base de segurança](docs/SECURITY-BASELINE.md)
-- [Fronteira de integração](docs/INTEGRATION-CONTRACT.md)
+- [Contrato de integração futura](docs/INTEGRATION-CONTRACT.md)
 - [Regras para agentes de desenvolvimento](AGENTS.md)
-
-## Estado técnico e limites
-
-A Fase 2 valida a fundação técnica, não o produto JARVIS final. WebLLM, WebGPU, pesos de modelos, Knowledge Base, retrieval, Agent Core, Action Engine, memória e interface conversacional continuam por implementar nas fases previstas.
-
-O portefólio oficial mantém-se independente e sem alterações.
 
 ## Licença
 
-Ainda não foi adicionada uma licença de software. A licença só deverá ser definida após decisão explícita do proprietário.
+Ainda não foi adicionado um ficheiro LICENSE. A licença do código próprio permanece pendente de decisão explícita do proprietário.
