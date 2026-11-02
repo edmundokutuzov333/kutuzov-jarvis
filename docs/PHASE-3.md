@@ -89,7 +89,7 @@ A interface detecta a ausência de WebGPU e não força o carregamento. A pesqui
 
 ## Resultado
 
-O Local Intelligence Engine está implementado em código e passou o CI. A Fase 3 ainda não está aceite para produção porque falta carregar e executar o modelo num dispositivo físico com WebGPU. A Fase 4 não deve iniciar antes desse teste e do registo dos resultados.
+O Local Intelligence Engine está implementado em código e passou o CI. A Fase 3 ainda não está aceite para produção porque falta carregar e executar o modelo num dispositivo físico com WebGPU. A validação física continua obrigatória para a aceitação da Fase 3. A implementação determinística da Fase 4 foi iniciada separadamente por autorização explícita: o Knowledge Engine não inicializa nem depende do runtime WebLLM. A aceitação integrada da Fase 4 continua pendente da prova física e de testes de respostas do modelo com contexto recuperado.
 
 ## Fontes
 

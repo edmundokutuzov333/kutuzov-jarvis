@@ -143,3 +143,22 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** não activar resumable generation nesta fase.  
 **Motivo:** a documentação WebLLM indica que a funcionalidade depende de bibliotecas de modelo com primitivas de checkpoint e suporta apenas certos pedidos text-only. A biblioteca binária utilizada ainda não foi demonstrada como checkpoint-capable.  
 **Consequência:** o runtime suporta cancelamento e limpeza, mas não afirma retomar uma geração interrompida. Reavaliar após validar suporte do binário e definir a política de sessões.
+
+
+## ADR-0026: snapshot público tipado como Knowledge Base inicial
+**Estado:** Aceite e implementado  
+**Decisão:** manter um snapshot local versionado do conteúdo público auditado, validado com Zod, em vez de consultar o CMS em runtime.  
+**Motivo:** preservar independência, reduzir dependências e assegurar que o modelo só recebe conteúdo público com origem e estado editorial identificáveis.  
+**Consequência:** o catálogo tem 57 factos públicos e 4 restrições editoriais internas, capturados em 2 de Novembro de 2026. A actualização exige nova auditoria/exportação. IDs são locais ao JARVIS e não representam UUIDs do CMS.
+
+## ADR-0027: retrieval lexical antes de embeddings
+**Estado:** Aceite e implementado  
+**Decisão:** começar com normalização de texto, tokenização, sinónimos PT/EN, correspondência de entidades e ranking determinístico.  
+**Motivo:** a base é pequena, o fallback precisa de funcionar sem WebGPU e embeddings acrescentariam tamanho e dependências sem evidência de necessidade.  
+**Consequência:** o Agent Core recebe um envelope compacto com factos, restrições e referências. Reavaliar embeddings apenas se uma avaliação de recuperação demonstrar falhas relevantes.
+
+## ADR-0028: separar factos públicos de restrições editoriais
+**Estado:** Aceite e implementado  
+**Decisão:** registos públicos e guardrails editoriais têm visibilidade e estados de verificação distintos.  
+**Motivo:** a biografia, os papéis por projecto, as métricas e os scores de competências não podem ser apresentados sem as respectivas ressalvas.  
+**Consequência:** guardrails podem orientar a resposta, mas não entram nas referências de factos públicos nem são apresentados como conteúdo publicado.

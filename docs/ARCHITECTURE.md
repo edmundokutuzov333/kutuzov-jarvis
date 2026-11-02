@@ -114,3 +114,18 @@ O runtime local vive em `src/runtime/local-runtime.ts`, com Worker dedicado em `
 A UI indica cerca de 352 MB de ficheiros listados e uma estimativa WebLLM de 1403.34 MB de VRAM. Estes valores não são medições num dispositivo real.
 
 A aceitação final depende de validar a carga e a geração num browser com GPU física. Consultar `docs/PHASE-3.md`.
+
+
+## 10. Knowledge Engine implementado na Fase 4
+
+A Knowledge Base é um snapshot local do conteúdo público auditado, não uma ligação runtime ao CMS. A implementação está em `src/knowledge/`:
+
+- `schema.ts`: validação Zod do catálogo, registos, fontes, visibilidade e estado editorial.
+- `catalog.ts`: 57 factos públicos e 4 restrições editoriais internas, todos com referência à auditoria de 2 de Novembro de 2026.
+- `search.ts`: normalização de acentos, tokenização, sinónimos PT/EN, ranking lexical e filtros por categoria.
+- `context.ts`: envelope compacto JSON com factos, restrições, referências e estado de ausência de evidência.
+- `index.ts`: exports públicos.
+
+O contexto usa até 4.500 caracteres e 6 registos por omissão. As restrições sobre biografia, papéis por projecto, métricas e pontuações de competências ficam separadas dos factos publicados.
+
+A recuperação não executa inferência e pode ser testada sem WebGPU. O envio deste contexto ao Qwen3 e a validação de respostas fundamentadas pertencem ao Agent Core e continuam pendentes da prova física do runtime.
