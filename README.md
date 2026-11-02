@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, trabalho e identidade profissional
 
 **Arquitectura pretendida:** browser-first, inteligência local, sem API de inferência remota e sem servidor dedicado.
 
-> Estado: Fase 0, fundação do repositório. A aplicação ainda não foi implementada.
+> Estado: Fase 0 concluída. A aplicação ainda não foi implementada; a Fase 1 ainda não começou.
 
 ## Objectivo
 
@@ -34,7 +34,7 @@ Não alterar o repositório oficial durante as fases de desenvolvimento independ
 
 | Fase | Estado |
 |---|---|
-| 0. Fundação do repositório | Em preparação |
+| 0. Fundação do repositório | Concluída |
 | 1. Investigação e auditoria | Não iniciada |
 | 2. Fundação técnica | Não iniciada |
 | 3. Motor de inteligência local | Não iniciada |
@@ -57,7 +57,7 @@ Não alterar o repositório oficial durante as fases de desenvolvimento independ
 
 ## Estado técnico actual
 
-Esta fase prepara o repositório e as regras de trabalho. Não selecciona um modelo, não instala WebLLM, não implementa componentes React e não declara compatibilidade WebGPU.
+A Fase 0 preparou o repositório, as regras de trabalho e a documentação inicial. Não seleccionou um modelo, não instalou WebLLM, não criou componentes React e não declarou compatibilidade WebGPU.
 
 Essas decisões pertencem à investigação da Fase 1 e à implementação das fases seguintes.
 
