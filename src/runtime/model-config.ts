@@ -19,7 +19,7 @@ export const QWEN3_MODEL_RECORD = {
   overrides: {
     context_window_size: 4096,
     prefill_chunk_size: 1024,
-  } as ModelRecord["overrides"],
+  } as NonNullable<ModelRecord["overrides"]>,
   integrity: {
     config: "sha256-GQpRxWuaB6jYchJm+ORZvNGxaJvN/ylHlc0r/6ID/y0=",
     model_lib: "sha256-elHP+ArV/hU54DOoO5p9JAlX0349jmIMa0NkirqQoMw=",
