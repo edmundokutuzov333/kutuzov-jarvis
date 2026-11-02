@@ -7,8 +7,8 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   page.on("request", (request) => {
     const url = request.url();
     if (
-      url.includes("huggingface.co/skillsafe-ai/") ||
-      url.includes("models.skillsafe.ai")
+      url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
+      url.includes("binary-mlc-llm-libs")
     ) {
       modelRequests.push(url);
     }
@@ -37,8 +37,8 @@ test("checks browser WebGPU capability without downloading model artifacts", asy
   page.on("request", (request) => {
     const url = request.url();
     if (
-      url.includes("huggingface.co/skillsafe-ai/") ||
-      url.includes("models.skillsafe.ai")
+      url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
+      url.includes("binary-mlc-llm-libs")
     ) {
       artifactRequests.push(url);
     }

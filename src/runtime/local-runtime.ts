@@ -223,6 +223,9 @@ export class LocalInferenceRuntime {
         "Já existe uma geração em curso.",
       );
     }
+    if (externalSignal?.aborted) {
+      return { cancelled: true };
+    }
 
     const controller = new AbortController();
     this.#generationController = controller;

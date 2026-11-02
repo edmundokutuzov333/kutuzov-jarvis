@@ -213,12 +213,12 @@ export function LocalEnginePanel() {
           <span className="model-strip__label">SELECTED MODEL</span>
           <strong>{LOCAL_MODEL_METADATA.name}</strong>
           <span className="model-strip__subline">
-            {LOCAL_MODEL_METADATA.quantization} · {LOCAL_MODEL_METADATA.contextWindow.toLocaleString("en-US")} context
+            {LOCAL_MODEL_METADATA.quantization} · {LOCAL_MODEL_METADATA.contextWindow.toLocaleString("en-US")} context · est. {((LOCAL_MODEL_METADATA.vramRequiredMb ?? 0) / 1024).toFixed(1)} GB GPU memory
           </span>
         </div>
         <div className="model-strip__size">
           <strong>≈ {LOCAL_MODEL_METADATA.approximateListedArtifactSizeMb} MB</strong>
-          <span>artefactos listados</span>
+          <span>download listado</span>
         </div>
       </div>
 
@@ -360,7 +360,7 @@ export function LocalEnginePanel() {
       {errorMessage ? <p className="engine-panel__error" role="alert">{errorMessage}</p> : null}
 
       <p className="engine-panel__footnote">
-        Os ficheiros são obtidos de Hugging Face e do registry de artefactos SkillSafe AI. Isto é distribuição de pesos, não inferência na cloud. O browser pode remover a cache. O modelo ainda não contém a Knowledge Base de Kutuzov.
+        Pesos MLC obtidos de Hugging Face numa revisão fixa e biblioteca WebGPU obtida do repositório oficial de binários MLC numa revisão fixa. São ficheiros de distribuição, não um serviço de inferência. O tamanho listado do download é cerca de 352 MB; a estimativa publicada de memória GPU é cerca de 1,4 GB. O browser pode remover a cache. O modelo ainda não contém a Knowledge Base de Kutuzov.
       </p>
     </section>
   );

@@ -1,34 +1,49 @@
 import { describe, expect, it } from "vitest";
 
-import { LOCAL_MODEL_ID, LOCAL_MODEL_APP_CONFIG, QWEN3_MODEL_RECORD } from "./model-config";
+import {
+  LOCAL_MODEL_ID,
+  LOCAL_MODEL_APP_CONFIG,
+  LOCAL_MODEL_METADATA,
+  QWEN3_MODEL_RECORD,
+} from "./model-config";
 import { LocalInferenceRuntime, LocalRuntimeError } from "./local-runtime";
 
 describe("Qwen3 WebLLM model configuration", () => {
-  it("registers one compact Qwen3 model with a fixed 4K context profile", () => {
+  it("uses the official MLC Qwen3 model revision with the 4K context profile", () => {
     expect(LOCAL_MODEL_APP_CONFIG.model_list).toHaveLength(1);
     expect(QWEN3_MODEL_RECORD.model_id).toBe(LOCAL_MODEL_ID);
+    expect(LOCAL_MODEL_ID).toBe("Qwen3-0.6B-q4f16_1-MLC");
     expect(QWEN3_MODEL_RECORD.overrides).toEqual({
       context_window_size: 4096,
-      prefill_chunk_size: 1024,
     });
+    expect(QWEN3_MODEL_RECORD.low_resource_required).toBe(true);
+    expect(QWEN3_MODEL_RECORD.vram_required_MB).toBe(1403.34);
     expect(LOCAL_MODEL_APP_CONFIG.cacheBackend).toBe("cache");
   });
 
-  it("requires integrity checks to fail closed for the config, WASM and tokenizer", () => {
+  it("pins model weights and WebGPU library to immutable revisions", () => {
+    expect(QWEN3_MODEL_RECORD.model).toContain(LOCAL_MODEL_METADATA.modelRevision);
+    expect(QWEN3_MODEL_RECORD.model_lib).toContain(LOCAL_MODEL_METADATA.modelLibraryCommit);
+    expect(LOCAL_MODEL_METADATA.modelLibraryGitBlob).toBe(
+      "bccc95f5fa0cac4a5bfa7a6305c6195eea23f7f7",
+    );
+  });
+
+  it("verifies the published model config and tokenizer and fails closed", () => {
     expect(QWEN3_MODEL_RECORD.integrity).toMatchObject({
       onFailure: "error",
       config: expect.stringMatching(/^sha256-/),
-      model_lib: expect.stringMatching(/^sha256-/),
       tokenizer: {
         "tokenizer.json": expect.stringMatching(/^sha256-/),
       },
     });
+    expect(QWEN3_MODEL_RECORD.integrity).not.toHaveProperty("model_lib");
   });
 
-  it("does not expose any remote inference provider configuration", () => {
-    expect(QWEN3_MODEL_RECORD.model).toContain("huggingface.co/skillsafe-ai/");
-    expect(QWEN3_MODEL_RECORD.model_lib).toContain("/lib/");
-    expect(LOCAL_MODEL_ID).toBe("qwen3-0.6b-q4f16");
+  it("keeps model weight and GPU memory estimates separate", () => {
+    expect(LOCAL_MODEL_METADATA.approximateListedArtifactSizeMb).toBe(352);
+    expect(LOCAL_MODEL_METADATA.vramRequiredMb).toBe(1403.34);
+    expect(LOCAL_MODEL_METADATA.modelLibrarySizeMb).toBe(6.56);
   });
 });
 
