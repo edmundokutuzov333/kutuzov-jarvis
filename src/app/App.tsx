@@ -2,9 +2,9 @@ import { LocalEnginePanel } from "./LocalEnginePanel";
 
 const systemStatus = [
   {
-    label: "Knowledge source",
-    value: "Not loaded",
-    detail: "Verified portfolio data will be added in Phase 4.",
+    label: "Knowledge Engine",
+    value: "Built, not connected",
+    detail: "Verified public snapshot and lexical retrieval are implemented. Conversation integration belongs to Phase 5.",
   },
   {
     label: "Conversation memory",

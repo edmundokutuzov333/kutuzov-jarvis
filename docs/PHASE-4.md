@@ -103,7 +103,13 @@ Orçamento por omissão: 4.500 caracteres e 6 registos. A opção de limite de r
 - Resultado vazio para perguntas sem suporte.
 - Limites de contexto, referências e truncagem.
 
-Foram adicionados 21 testes unitários em três ficheiros. O resultado real de CI será registado após a execução do workflow no commit.
+Foram adicionados 21 testes unitários em três ficheiros. Workflow [JARVIS quality gates, run 41472934531](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41472934531) concluído com sucesso:
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 6 ficheiros, 39 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 2/2 testes aprovados.
+- Lockfile: verificado e preservado.
 
 ## Limitações e trabalho pendente
 
