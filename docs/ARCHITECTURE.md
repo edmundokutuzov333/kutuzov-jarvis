@@ -1,6 +1,6 @@
 # Arquitectura preliminar
 
-**Estado:** orientação arquitectural aceite; detalhes de implementação pendentes da Fase 1.
+**Estado:** revista após a Fase 1. A arquitectura lógica está estabelecida; detalhes de implementação e escolha final do modelo continuam sujeitos à prova técnica.
 
 ## 1. Objectivo
 O JARVIS é um assistente especializado na informação profissional de Kutuzov. Não é um assistente geral, não é um sistema multiagente e não precisa de um backend de inteligência.
@@ -14,6 +14,7 @@ O JARVIS é um assistente especializado na informação profissional de Kutuzov.
 6. O modelo não executa acções directamente.
 7. O fallback sem modelo é determinístico.
 8. A integração com o portefólio é isolada por um adaptador anfitrião.
+9. A fonte de dados profissional é conteúdo público publicado, não arrays estáticos ou placeholders sem reconciliação.
 
 ## 3. Componentes lógicos
 
@@ -21,7 +22,7 @@ O JARVIS é um assistente especializado na informação profissional de Kutuzov.
 Responsável pela apresentação, entrada do visitante, estados, mensagens, acessibilidade e feedback. Não importa nem inicializa o runtime de IA na carga inicial.
 
 ### Runtime local
-Responsável por carregar o modelo escolhido, gerar respostas e gerir streaming, cancelamento e libertação de recursos. A implementação deverá ser lazy-loaded e executada fora da thread principal sempre que o runtime escolhido o permitir.
+Responsável por carregar o modelo escolhido, gerar respostas e gerir streaming, cancelamento e libertação de recursos. A implementação deverá ser lazy-loaded e executada em Web Worker. WebLLM é a base técnica investigada; Qwen3-0.6B q4f16_1 é o primeiro candidato de prova e Llama 3.2 1B q4f16_1 é o baseline prebuilt. Nenhum modelo está aprovado para produção.
 
 ### Knowledge Engine
 Responsável por consultar os registos profissionais, ordenar resultados e construir um contexto compacto. A pesquisa lexical e por metadados é a primeira hipótese. Embeddings são opcionais e só serão considerados se a avaliação demonstrar necessidade.
@@ -30,33 +31,36 @@ Responsável por consultar os registos profissionais, ordenar resultados e const
 Responsável por organizar a pergunta, recuperar factos, preparar instruções, solicitar a resposta e validar o formato. Não é um sistema multiagente.
 
 ### Action Engine
-Responsável por validar comandos contra uma lista fechada de acções e schemas. Os handlers dependem de um adaptador anfitrião. O runtime de modelo não recebe acesso directo ao DOM, ao código da aplicação ou a APIs arbitrárias.
+Responsável por validar comandos contra uma lista fechada de acções e schemas. O modelo não executa ferramentas arbitrárias. A aplicação anfitriã valida e executa a acção. A primeira versão deverá usar router de intenções determinístico e Zod, em vez de depender de function calling nativo de modelos pequenos.
 
 ### Memória local
-Responsável pelo estado e histórico da conversa no dispositivo. A persistência será limitada, transparente e eliminável pelo visitante. A tecnologia concreta será confirmada na Fase 1/2.
+Responsável pelo estado e histórico da conversa no dispositivo. A persistência será limitada, transparente e eliminável pelo visitante. A tecnologia concreta será confirmada na implementação. O cache de pesos do WebLLM é separado do histórico da conversa.
 
 ### Fallback determinístico
 Permite pesquisa e navegação sobre dados disponíveis quando WebGPU ou o modelo não estão disponíveis. Não deve simular respostas geradas por IA.
 
 ## 4. Fluxo de pergunta
 1. O visitante abre o JARVIS.
-2. A interface verifica capacidades do browser.
-3. O visitante escolhe iniciar o modelo local.
-4. O runtime é carregado e inicializado.
+2. A interface verifica capacidades do browser e o contexto seguro.
+3. O visitante escolhe iniciar o modelo.
+4. O runtime WebLLM é carregado dinamicamente e inicializado num Worker.
 5. A pergunta é validada.
 6. O Knowledge Engine recupera factos relevantes.
 7. O Agent Core prepara o contexto limitado.
 8. O modelo local gera uma resposta.
 9. A resposta estruturada é validada.
-10. Se existir uma proposta de acção, o Action Engine valida-a.
-11. A interface apresenta a resposta e, quando autorizado, executa a acção.
+10. Se existir uma proposta de navegação, o Action Router valida a intenção e os parâmetros.
+11. A aplicação anfitriã executa apenas a acção autorizada.
+12. A interface apresenta a resposta e a fonte.
 
 ## 5. Dados e fontes
-A fonte de verdade profissional será o conteúdo público e verificado do portefólio, complementado apenas por informação adicional explicitamente confirmada.
+A fonte de verdade profissional é o conteúdo público e publicado do CMS do portefólio, complementado apenas por informação adicional explicitamente confirmada.
 
-O repositório independente pode conter uma exportação compacta e versionada da Knowledge Base. Não deve conter dados administrativos, privados ou conteúdo não publicado.
+Durante desenvolvimento independente, a Knowledge Base deverá ser uma exportação JSON compacta, versionada e com origem/estado de verificação. O CMS não será consultado directamente pelo JARVIS independente nesta fase.
 
-A sincronização com o CMS não será implementada nesta fase. A futura integração será read-only e será descrita num contrato específico.
+A integração futura poderá usar um adaptador read-only para as queries públicas do CMS ou um snapshot gerado durante build. Não criar um segundo CMS nem expor conteúdo administrativo.
+
+A auditoria do CMS encontrou 4 projectos publicados, 20 clientes visíveis e discrepâncias a resolver na biografia e no papel desempenhado por projecto. Consultar docs/PORTFOLIO-DATA-AUDIT.md.
 
 ## 6. Fronteiras de confiança
 - Perguntas do visitante: não confiáveis.
@@ -66,16 +70,12 @@ A sincronização com o CMS não será implementada nesta fase. A futura integra
 - Knowledge Base: informação de referência, com origem e estado de verificação.
 - Adaptador anfitrião: única fronteira entre o JARVIS e a aplicação do portefólio.
 
-## 7. Questões em aberto
-A Fase 1 deverá investigar e documentar:
-- Modelo WebLLM mais pequeno que cumpra os testes.
-- Tamanho real dos pesos e quantização.
-- Requisitos de RAM/VRAM e compatibilidade do browser.
-- Suporte a português e qualidade de respostas estruturadas.
-- Estratégia de worker compatível com a versão escolhida do WebLLM.
-- Cache e persistência dos pesos no browser.
-- Estratégia de retrieval mais eficiente.
-- Requisitos e limites de desempenho.
-- Licenças dos modelos e dependências.
+## 7. Decisões ainda pendentes
+- Benchmark e aprovação final do modelo em equipamentos reais.
+- Versão exacta do pacote WebLLM e combinação de model library.
+- Origem estática de distribuição e política de espelhamento dos pesos.
+- Budget de bundle inicial, tempo de carregamento e memória.
+- Estratégia exacta de cache e persistência do histórico.
+- Reconciliação editorial da biografia e das funções por projecto.
 
 Nenhuma destas questões deve ser resolvida por suposição.

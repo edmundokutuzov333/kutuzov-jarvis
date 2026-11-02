@@ -48,6 +48,7 @@ Construir um assistente digital especializado em Kutuzov, executado localmente n
 - Não declarar algo testado sem executar o teste correspondente.
 - Distinguir sempre Implementado, Testado, Aprovado, Pendente e Bloqueado.
 - Actualizar documentação quando uma decisão ou contrato mudar.
+- No fim de cada fase, actualizar o README.md com o estado verdadeiro, os resultados, os bloqueadores e a fase seguinte.
 
 ## Qualidade de código (quando existir código)
 - TypeScript estrito.
