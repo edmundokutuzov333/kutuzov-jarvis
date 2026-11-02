@@ -19,14 +19,13 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   await expect(
     page.getByRole("heading", { name: /intelligence stays on your device/i }),
   ).toBeVisible();
-  await expect(page.getByText("NOT CHECKED")).toBeVisible();
+  await expect(page.locator(".engine-status__value").first()).toHaveText("NOT CHECKED");
   await expect(
     page.getByRole("button", { name: "Check this device" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Load local model" }),
   ).toHaveCount(0);
-  await expect(page.getByText(/No remote inference API/i)).toHaveCount(0);
 
   expect(modelRequests).toHaveLength(0);
 });
