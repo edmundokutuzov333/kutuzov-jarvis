@@ -5,7 +5,7 @@ interface VoiceConsoleProps {
 }
 
 const labels = {
-  idle: "Falar com Edmundo",
+  idle: "Falar com Kutuzov",
   listening: "A ouvir",
   processing: "A preparar",
   speaking: "A responder",
