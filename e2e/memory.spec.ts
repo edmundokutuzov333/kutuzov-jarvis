@@ -38,7 +38,7 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
     const store = new LocalConversationStore();
     const session = await store.createSession();
-    for (let index = 0; index < 8; index += 1) {
+    for (let index = 0; index < 106; index += 1) {
       await store.appendMessage(session.id, {
         role: index % 2 === 0 ? "user" : "assistant",
         content: "Mensagem de teste " + index,
@@ -59,12 +59,12 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
     };
   });
 
-  expect(stored.storedMessages).toBe(8);
+  expect(stored.storedMessages).toBe(100);
   expect(stored.historyLength).toBe(6);
-  expect(stored.firstContextMessage).toBe("Mensagem de teste 2");
-  expect(stored.lastContextMessage).toBe("Mensagem de teste 7");
+  expect(stored.firstContextMessage).toBe("Mensagem de teste 100");
+  expect(stored.lastContextMessage).toBe("Mensagem de teste 105");
   expect(stored.sessionCount).toBe(1);
-  expect(stored.messageCount).toBe(8);
+  expect(stored.messageCount).toBe(100);
   expect(stored.enabled).toBe(true);
 
   await page.reload();
@@ -72,7 +72,7 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
     name: "Guardar histórico neste dispositivo",
   })).toBeChecked();
   await expect(page.getByTestId("memory-session-count")).toHaveText("1");
-  await expect(page.getByTestId("memory-message-count")).toHaveText("8");
+  await expect(page.getByTestId("memory-message-count")).toHaveText("100");
 
   page.on("dialog", (dialog) => dialog.accept());
   await page.getByTestId("memory-delete-all").click();
@@ -107,4 +107,24 @@ test("privacy controls remain usable at a mobile viewport", async ({ page }) => 
     name: "Guardar histórico neste dispositivo",
   })).toBeVisible();
   await expect(page.getByTestId("memory-delete-all")).toBeVisible();
+});
+
+test("retains no more than twenty local conversation sessions", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(async () => {
+    const { LocalConversationStore } = await import("/src/memory/local-store.ts");
+    const store = new LocalConversationStore();
+    await store.setHistoryEnabled(true);
+    for (let index = 0; index < 21; index += 1) {
+      await store.createSession();
+    }
+    const sessions = await store.listSessions();
+    return {
+      count: sessions.length,
+      allTitlesAreGeneric: sessions.every((session) => session.title === "Nova conversa"),
+    };
+  });
+
+  expect(result.count).toBe(20);
+  expect(result.allTitlesAreGeneric).toBe(true);
 });
