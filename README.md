@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0 a 7 implementadas e validadas por CI nos limites documentados. A Fase 7 fornece memória local opcional e controlos de privacidade; a ligação ao ciclo conversacional final continua pendente da Fase 8. Fases 8 a 10 ainda não iniciadas. A aceitação integrada do modelo continua dependente de inferência física com WebGPU.
+> **Estado actual:** Fases 0 a 7 implementadas e validadas por CI nos limites documentados. A Fase 8 implementa a interface conversacional, a ligação ao Agent Core, o fallback determinístico, as referências, os cartões, as acções com confirmação e a memória local integrada. A aprovação depende dos quality gates da Fase 8. As provas com GPU física permanecem pendentes para a Fase 9.
 
 ## Objectivo
 
@@ -43,11 +43,11 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 5. Agent Core | Implementada e validada por CI; avaliação real com Qwen3 pendente |
 | 6. Action Engine | Implementada e validada por CI no sandbox; adaptador do portefólio real não implementado |
 | 7. Memória e privacidade | Implementada e validada por CI; ligação à UI conversacional pendente da Fase 8 |
-| 8. Interface conversacional | Não iniciada |
+| 8. Interface conversacional | Implementada; quality gates pendentes |
 | 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A memória local está implementada e validada, mas a ligação ao ciclo conversacional só será feita na Fase 8. Estes critérios são separados e continuam pendentes.
+A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 8 liga a interface ao Agent Core e à memória, mas a qualidade das respostas e a inferência física permanecem sujeitas a ensaios na Fase 9.
 
 ## Fase 1: investigação e auditoria
 
@@ -195,6 +195,25 @@ O serviço está disponível para a Fase 8, mas ainda não existe interface de c
 
 Consultar [docs/PHASE-7.md](docs/PHASE-7.md).
 
+## Fase 8: Interface conversacional
+
+A interface conversacional foi implementada em src/app/ConversationWorkspace.tsx, com a pesquisa determinística separada em src/app/conversation-utils.ts.
+
+- O chat é a superfície principal da aplicação.
+- O modelo WebLLM permanece sob pedido explícito; abrir a página não descarrega pesos nem importa o runtime de inferência.
+- O Agent Core está ligado ao runtime local através de AgentModelPort.
+- A resposta só é apresentada depois da validação estruturada e das referências.
+- Sem WebGPU ou sem modelo carregado, a aplicação usa pesquisa lexical determinística e assinala esse modo.
+- Cartões de projecto apresentam informação do snapshot público e permitem preparar uma proposta de abertura.
+- As nove acções continuam no registry fechado e exigem confirmação explícita no adaptador sandbox.
+- O histórico opcional usa o IndexedDB da Fase 7 e pode ser recuperado depois de reload.
+- O painel mantém os controlos para consentimento e eliminação completa.
+- Não foram adicionadas dependências nem alterado o lockfile.
+
+A interface não está ligada às rotas do website oficial. O estado do adaptador sandbox não representa navegação real. A validação com GPU física e a qualidade semântica do Qwen3 permanecem pendentes.
+
+Consultar [docs/PHASE-8.md](docs/PHASE-8.md).
+
 ## Quality gates
 
 Último workflow da Fase 7: [JARVIS quality gates, run 41556771231](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41556771231).
@@ -240,7 +259,7 @@ npm run test:e2e
 
 ```text
 src/
-├── app/          # shell técnica, painel WebLLM e consola sandbox
+├── app/          # workspace conversacional, fallback, painel de privacidade e sandbox
 ├── domain/       # contratos de conversa
 ├── knowledge/    # schema, catálogo, retrieval, contexto e testes
 ├── agent/        # prompts, ciclo de conversação, modelo local e validação
@@ -274,9 +293,8 @@ docs/
 - A validação de citações não garante entailment semântico.
 - A Knowledge Base é um snapshot e precisa de nova auditoria quando o CMS mudar.
 - A biografia e os papéis por projecto continuam editorialmente pendentes.
-- Não existe interface conversacional completa nem fluxo de confirmação de propostas geradas pelo modelo ligado ao utilizador.
 - O Action Engine só foi executado no adaptador sandbox. O adaptador real e a navegação do website não estão implementados.
-- A persistência e os controlos de memória local estão implementados. A ligação ao chat ainda não existe porque a interface conversacional pertence à Fase 8.
+- A interface usa o snapshot de conhecimento e não consulta o CMS em runtime.
 - Voz, optimização final e integração não estão implementadas.
 - Não existe licença de software definida para o código próprio.
 
@@ -290,6 +308,7 @@ docs/
 - [Fase 5: Agent Core](docs/PHASE-5.md)
 - [Fase 6: Action Engine](docs/PHASE-6.md)
 - [Fase 7: Memória e privacidade](docs/PHASE-7.md)
+- [Fase 8: Interface conversacional](docs/PHASE-8.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)

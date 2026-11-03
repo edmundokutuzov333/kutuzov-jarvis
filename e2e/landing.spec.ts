@@ -1,43 +1,35 @@
 import { expect, test } from "@playwright/test";
 
-test("keeps the local model unloaded until the visitor explicitly starts it", async ({
-  page,
-}) => {
+test("opens the conversational workspace without preloading model code or weights", async ({ page }) => {
   const modelRequests: string[] = [];
   const runtimeRequests: string[] = [];
+
   page.on("request", (request) => {
     const url = request.url();
     if (
       url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
       url.includes("binary-mlc-llm-libs")
-    ) {
-      modelRequests.push(url);
-    }
+    ) modelRequests.push(url);
     if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
       runtimeRequests.push(url);
     }
   });
 
   await page.goto("/");
+  await expect(page.getByRole("heading", {
+    name: "O que gostaria de conhecer sobre Kutuzov?",
+  })).toBeVisible();
+  await expect(page.getByLabel("Escreva a sua pergunta")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Nova conversa/ })).toBeVisible();
 
-  await expect(
-    page.getByRole("heading", { name: /memory without compromise/i }),
-  ).toBeVisible();
-  await expect(page.locator(".engine-status__value").first()).toHaveText("NOT CHECKED");
-  await expect(
-    page.getByRole("button", { name: "Check this device" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Load local model" }),
-  ).toHaveCount(0);
+  await expect(page.getByText(/Qwen3-0.6B/)).toBeVisible();
+  await expect(page.getByText(/A VERIFICAR|IA LOCAL ACTIVA|PESQUISA LOCAL|MODELO NÃO CARREGADO|MODELO INDISPONÍVEL/)).toBeVisible();
 
   expect(modelRequests).toHaveLength(0);
   expect(runtimeRequests).toHaveLength(0);
 });
 
-test("checks browser WebGPU capability without downloading model artifacts", async ({
-  page,
-}) => {
+test("shows WebGPU readiness without fetching model artifacts", async ({ page }) => {
   const artifactRequests: string[] = [];
   const runtimeRequests: string[] = [];
   page.on("request", (request) => {
@@ -45,38 +37,85 @@ test("checks browser WebGPU capability without downloading model artifacts", asy
     if (
       url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
       url.includes("binary-mlc-llm-libs")
-    ) {
-      artifactRequests.push(url);
-    }
+    ) artifactRequests.push(url);
     if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
       runtimeRequests.push(url);
     }
   });
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Check this device" }).click();
+  const modelAction = page.getByRole("button", { name: "Carregar modelo local" });
+  const readiness = page.getByText(/WebGPU indisponível|WebGPU não está disponível|Carregar modelo local/);
 
-  const compatibility = page.locator(".engine-status__value").first();
-  await expect(compatibility).not.toHaveText("NOT CHECKED");
+  await expect(readiness).toBeVisible();
+  const compatible = await modelAction.count();
 
-  const status = await compatibility.textContent();
-  if (status === "WEBGPU AVAILABLE") {
-    await expect(
-      page.getByRole("button", { name: "Load local model" }),
-    ).toBeVisible();
+  if (compatible === 1) {
+    await expect(modelAction).toBeVisible();
   } else {
-    await expect(compatibility).toHaveText("NOT AVAILABLE");
-    await expect(
-      page.getByRole("button", { name: "Load local model" }),
-    ).toHaveCount(0);
+    await expect(page.getByText(/WebGPU indisponível|WebGPU não está disponível/)).toBeVisible();
   }
 
   expect(artifactRequests).toHaveLength(0);
   expect(runtimeRequests).toHaveLength(0);
 });
 
+test("uses honest deterministic search when WebGPU is unavailable", async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      Object.defineProperty(navigator, "gpu", {
+        configurable: true,
+        value: undefined,
+      });
+    } catch {
+      // The browser may expose a non-configurable WebGPU property.
+    }
+  });
 
-test("runs all nine allowlisted actions only inside the isolated demo host", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("PESQUISA LOCAL", { exact: true }).first()).toBeVisible();
+
+  const composer = page.getByLabel("Escreva a sua pergunta");
+  await composer.fill("Quem é Kutuzov?");
+  await page.getByRole("button", { name: "Enviar" }).click();
+
+  await expect(page.getByText(
+    /A pesquisa local encontrou informação publicada relacionada com a pergunta/,
+  )).toBeVisible();
+  await expect(page.getByText("Perfil público de Edmundo Kutuzov")).toBeVisible();
+  await expect(page.getByText(/PESQUISA LOCAL/).last()).toBeVisible();
+});
+
+test("integrates opt-in memory with a real conversation and restores it after reload", async ({ page }) => {
+  await page.goto("/");
+
+  const historyToggle = page.getByRole("checkbox", {
+    name: "Guardar histórico neste dispositivo",
+  });
+  await expect(historyToggle).not.toBeChecked();
+  await historyToggle.check();
+  await expect(page.getByTestId("memory-state")).toHaveText("ACTIVO");
+
+  await page.getByLabel("Escreva a sua pergunta").fill("Quem é Kutuzov?");
+  await page.getByRole("button", { name: "Enviar" }).click();
+
+  await expect(page.getByText(
+    /A pesquisa local encontrou informação publicada relacionada com a pergunta/,
+  )).toBeVisible();
+  await expect(page.getByTestId("memory-message-count")).toHaveText("2");
+
+  await page.reload();
+  await expect(page.getByRole("checkbox", {
+    name: "Guardar histórico neste dispositivo",
+  })).toBeChecked();
+  await expect(page.getByText("VOCÊ", { exact: true })).toBeVisible();
+  await expect(page.getByText("Quem é Kutuzov?")).toBeVisible();
+  await expect(page.getByText(
+    /A pesquisa local encontrou informação publicada relacionada com a pergunta/,
+  )).toBeVisible();
+});
+
+test("keeps the nine allowlisted actions inside the isolated demo host", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("SANDBOX / DEMO ONLY")).toBeVisible();
@@ -112,4 +151,21 @@ test("runs all nine allowlisted actions only inside the isolated demo host", asy
   await expect(page.getByTestId("action-result-status")).toHaveText("EXECUTED");
   await expect(page.getByText("ENVIRONMENT: DEMO")).toBeVisible();
   await expect(page.getByText("9 EVENTS")).toBeVisible();
+});
+
+test("keeps the conversation usable on a narrow mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", {
+    name: "O que gostaria de conhecer sobre Kutuzov?",
+  })).toBeVisible();
+  await expect(page.getByLabel("Escreva a sua pergunta")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enviar" })).toBeDisabled();
+
+  const overflow = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+  }));
+  expect(overflow.document).toBeLessThanOrEqual(overflow.viewport);
 });

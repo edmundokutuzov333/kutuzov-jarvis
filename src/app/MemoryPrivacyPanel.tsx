@@ -6,13 +6,19 @@ import {
   type LocalMemoryStatus,
 } from "../memory";
 
+interface MemoryPrivacyPanelProps {
+  onHistoryEnabledChange?: (enabled: boolean) => void;
+}
+
 function describeError(error: unknown): string {
   if (error instanceof MemoryStoreError) return error.message;
   if (error instanceof Error) return error.message;
   return "Não foi possível aceder à memória local deste browser.";
 }
 
-export function MemoryPrivacyPanel() {
+export function MemoryPrivacyPanel({
+  onHistoryEnabledChange,
+}: MemoryPrivacyPanelProps) {
   const store = useMemo(() => new LocalConversationStore(), []);
   const [status, setStatus] = useState<LocalMemoryStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -22,6 +28,7 @@ export function MemoryPrivacyPanel() {
     try {
       const next = await store.getStatus();
       setStatus(next);
+      onHistoryEnabledChange?.(next.historyEnabled);
       setError("");
     } catch (reason) {
       setError(describeError(reason));
@@ -31,14 +38,16 @@ export function MemoryPrivacyPanel() {
   useEffect(() => {
     let active = true;
     void store.getStatus().then((next) => {
-      if (active) setStatus(next);
+      if (!active) return;
+      setStatus(next);
+      onHistoryEnabledChange?.(next.historyEnabled);
     }).catch((reason: unknown) => {
       if (active) setError(describeError(reason));
     });
     return () => {
       active = false;
     };
-  }, [store]);
+  }, [onHistoryEnabledChange, store]);
 
   async function changePreference(enabled: boolean) {
     const previousStatus = status;
