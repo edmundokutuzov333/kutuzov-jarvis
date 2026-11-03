@@ -984,3 +984,15 @@ html, body, #root{width:100%;min-height:100%;margin:0}html, body{overflow:hidden
 @keyframes deck-orbit{to{transform:rotate(405deg) translateX(3px)}}
 @media(max-width:600px){.project-deck__grid{grid-template-columns:1fr}.project-deck__heading{align-items:flex-start;flex-direction:column;gap:4px}}
 @media(prefers-reduced-motion:reduce){.project-deck__visual i{animation:none}}
+
+
+/* Ephemeral-session panel: the old privacy/history surface is intentionally replaced. */
+.session-panel{display:grid;gap:18px;padding:24px;color:#d8e9ff;}
+.session-panel__eyebrow{color:#63b9ff;font:600 10px/1.4 var(--mono);letter-spacing:.14em;}
+.session-panel h2{margin:0;color:#f5f9ff;font-size:clamp(22px,3vw,34px);line-height:1.05;}
+.session-panel p{margin:0;color:#9fb6d2;line-height:1.6;max-width:48ch;}
+.session-panel__list{display:grid;gap:10px;}
+.session-panel__list div{display:grid;gap:5px;padding:13px 14px;border:1px solid rgba(99,185,255,.2);border-radius:14px;background:rgba(8,25,53,.48);}
+.session-panel__list strong{color:#dff2ff;font-size:13px;}
+.session-panel__list span{color:#8fa9c6;font-size:12px;line-height:1.45;}
+.session-panel__status{font:600 10px/1.4 var(--mono);letter-spacing:.08em;color:#63e6c0!important;}

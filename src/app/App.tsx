@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { FloatingWindow } from "./FloatingWindow";
-import { MemoryPrivacyPanel } from "./MemoryPrivacyPanel";
+import { SessionInfoPanel } from "./SessionInfoPanel";
 
-type WindowId = "conversation" | "memory";
-const labels: Record<WindowId, string> = { conversation: "Conversa", memory: "Privacidade" };
+type WindowId = "conversation" | "session";
+const labels: Record<WindowId, string> = { conversation: "Conversa", session: "Sessão" };
 
 export function App() {
-  const [historyEnabled, setHistoryEnabled] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
-  const [visible, setVisible] = useState<Record<WindowId, boolean>>({ conversation: true, memory: false });
+  const [visible, setVisible] = useState<Record<WindowId, boolean>>({ conversation: true, session: false });
   const [active, setActive] = useState<WindowId>("conversation");
 
   function close(id: WindowId) {
@@ -66,18 +65,18 @@ export function App() {
       </section>
       {visible.conversation ? (
         <FloatingWindow id="conversation" title="Conversa comigo" initialClass="window--conversation" zIndex={active === "conversation" ? 16 : 10} onFocus={() => setActive("conversation")} onClose={() => close("conversation")}>
-          <ConversationWorkspace historyEnabled={historyEnabled} onBusyChange={setAssistantBusy} />
+          <ConversationWorkspace historyEnabled={false} onBusyChange={setAssistantBusy} />
         </FloatingWindow>
       ) : null}
-      {visible.memory ? (
-        <FloatingWindow id="memory" title="As suas conversas" initialClass="window--memory" zIndex={active === "memory" ? 16 : 9} onFocus={() => setActive("memory")} onClose={() => close("memory")}>
-          <MemoryPrivacyPanel onHistoryEnabledChange={setHistoryEnabled} />
+      {visible.session ? (
+        <FloatingWindow id="session" title="Sessão JARVIS" initialClass="window--memory" zIndex={active === "session" ? 16 : 9} onFocus={() => setActive("session")} onClose={() => close("session")}>
+          <SessionInfoPanel />
         </FloatingWindow>
       ) : null}
       <nav className="desktop-dock" aria-label="Opções">
-        {(["conversation", "memory"] as WindowId[]).map((id) => (
+        {(["conversation", "session"] as WindowId[]).map((id) => (
           <button className={visible[id] ? "dock-app is-open" : "dock-app"} key={id} type="button" aria-label={"Abrir " + labels[id]} aria-pressed={visible[id] && active === id} onClick={() => visible[id] ? setActive(id) : open(id)}>
-            <span aria-hidden="true">{id === "conversation" ? "◉" : "⌘"}</span>
+            <span aria-hidden="true">{id === "conversation" ? "◉" : "✦"}</span>
             <small>{labels[id]}</small>
             {visible[id] ? <i /> : null}
           </button>
