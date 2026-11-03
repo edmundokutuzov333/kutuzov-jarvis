@@ -93,3 +93,22 @@ Estes controlos reduzem a superfície de risco, mas não provam que o modelo nã
 - O DemoPortfolioHostAdapter opera apenas num estado em memória, identificado como `demo`.
 
 O adaptador real do portefólio ainda não existe. A aplicação anfitriã terá de validar novamente cada comando e resolver apenas rotas/componentes actualmente autorizados. A aprovação do sandbox não prova a integração nem a segurança das rotas reais.
+
+
+## Controlos de memória e privacidade (Fase 7)
+
+- IndexedDB é a única persistência das conversas.
+- A gravação está desactivada por defeito e exige consentimento explícito.
+- A preferência é local e fica no mesmo IndexedDB do histórico.
+- Desactivar impede novas gravações, mas não é apresentado como eliminação.
+- A eliminação fecha a ligação e remove a base de dados inteira, incluindo sessões, mensagens e preferência.
+- Stores separados para sessões, mensagens e configuração.
+- Schemas Zod validam registos de sessão, mensagens e preferências lidas/escritas.
+- Limites: 20 sessões, 100 mensagens por sessão, retenção de 90 dias, até 2.000 mensagens no total.
+- Títulos das sessões são genéricos; não são derivados da pergunta nem guardam identidade do visitante.
+- O Agent Core recebe apenas até seis mensagens, com 500 caracteres por mensagem.
+- O histórico é contexto transitório, nunca uma fonte de factos profissionais.
+- O código de memória não faz chamadas HTTP, não envia eventos e não implementa sincronização.
+- Ligações IndexedDB fecham em `versionchange`; erros de bloqueio, indisponibilidade e transacção são expostos ao utilizador.
+
+A prova Playwright de ausência de pedidos externos cobre o fluxo de memória automatizado no Chromium. Não substitui auditoria de rede de todos os fluxos futuros nem prova por si só a privacidade da interface conversacional, que será ligada na Fase 8 e auditada novamente na Fase 9.
