@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-async function openPrivacy(page: import("@playwright/test").Page) {
+async function openPrivacy(page: Page) {
   await page.getByRole("button", { name: "Abrir Privacidade" }).click();
   await expect(page.getByRole("region", {
     name: "As suas conversas ficam sob o seu controlo.",
@@ -9,7 +9,6 @@ async function openPrivacy(page: import("@playwright/test").Page) {
 
 test("conversation history is opt-in, persists locally and can be deleted", async ({ page }) => {
   await page.goto("/");
-
   const externalRequests: string[] = [];
   const origin = new URL(page.url()).origin;
   page.on("request", (request) => {
@@ -69,7 +68,6 @@ test("conversation history is opt-in, persists locally and can be deleted", asyn
   await openPrivacy(page);
   const reloadedToggle = page.getByRole("checkbox", { name: "Guardar conversas neste dispositivo" });
   await expect(reloadedToggle).toBeChecked();
-
   await reloadedToggle.uncheck();
   await expect(reloadedToggle).not.toBeChecked();
   await reloadedToggle.check();
@@ -77,7 +75,6 @@ test("conversation history is opt-in, persists locally and can be deleted", asyn
 
   page.on("dialog", (dialog) => dialog.accept());
   await page.getByTestId("memory-delete-all").click();
-
   const afterDelete = await page.evaluate(async () => {
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
     return new LocalConversationStore().getStatus();
