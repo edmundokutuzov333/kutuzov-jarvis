@@ -103,7 +103,7 @@ function isHistory(value: unknown): value is Array<{ role: "user" | "assistant";
 
 function parseModelOutput(text: string): { status: string; answer: string; citationIds: string[]; followUpQuestion: string | null; actionProposal: null } | null {
   try {
-    const normalized = text.replace(/^\s*\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`\s*$/i, "").trim();
+    const normalized = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     const value = JSON.parse(normalized) as Record<string, unknown>;
     const status = value["status"];
     const answer = value["answer"];
