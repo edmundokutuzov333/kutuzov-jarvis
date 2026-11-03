@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { PortfolioActionSchema } from "../actions/schemas";
 
-export const AGENT_PROMPT_VERSION = "1.1.0";
+export const AGENT_PROMPT_VERSION = "1.2.0";
 export const MAX_AGENT_QUESTION_CHARACTERS = 2_000;
 export const MAX_AGENT_HISTORY_MESSAGES = 6;
 export const MAX_AGENT_HISTORY_MESSAGE_CHARACTERS = 500;
