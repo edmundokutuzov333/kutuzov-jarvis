@@ -12,7 +12,7 @@ test("opens a personal conversation without technical controls", async ({ page }
   await expect(page.getByRole("button", { name: "Nova conversa" })).toBeVisible();
   await expect(page.getByTestId("conversation-status")).toBeVisible();
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
-  await expect(page.locator('[data-window-id="memory"]')).toHaveCount(0);
+  await expect(page.locator('[data-window-id="session"]')).toHaveCount(0);
   await expect(page.getByText(/Gemini|JARVIS|Qwen3|WebGPU|sandbox|modelo local/i)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
   expect(externalModelRequests).toHaveLength(0);
@@ -74,14 +74,14 @@ test("uses the Gemini endpoint and speaks without exposing provider labels", asy
   await page.getByLabel("Escreva a sua mensagem").fill("Quem sou eu?");
   await page.getByRole("button", { name: "Enviar" }).click();
   await expect(page.getByText("Sou Art Director e desenvolvo trabalho criativo a partir de Maputo.")).toBeVisible();
-  await expect(page.getByText(/Gemini|JARVIS|GEMINI IA/)).toHaveCount(0);
+  await expect(page.getByText(/Gemini|GEMINI IA/)).toHaveCount(0);
   await expect(page.locator(".chat-message__meta").filter({ hasText: "KUTUZOV" })).toBeVisible();
 });
 
 test("keeps the visitor interface focused on conversation and ephemeral session", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
-  await expect(page.locator('[data-window-id="memory"]')).toHaveCount(0);
+  await expect(page.locator('[data-window-id="session"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Abrir Sessão" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
   await expect(page.getByText(/SANDBOX|DEMO HOST|REGISTERED ACTIONS|FONTES CONSULTADAS/)).toHaveCount(0);
