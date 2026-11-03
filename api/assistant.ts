@@ -131,18 +131,34 @@ type ParsedAnswer = {
   actionProposal: null;
 };
 
+function isEnglishQuestion(question: string): boolean {
+  const value = question.toLocaleLowerCase("en");
+  const englishMarkers = value.match(/\\b(what|which|who|how|where|tell|about|services|projects|project|contact|experience|brands|skills|offer)\\b/g)?.length ?? 0;
+  const portugueseMarkers = value.match(/\\b(qual|quais|quem|como|onde|conta|servicos|serviços|projectos|projetos|contacto|experiencia|experiência|marcas|competencias|competências)\\b/g)?.length ?? 0;
+  return englishMarkers > portugueseMarkers;
+}
+
 function fallbackAnswer(question: string): ParsedAnswer {
   const normalized = question.toLocaleLowerCase("pt-PT");
+  const english = isEnglishQuestion(question);
   if (/project|projecto|projeto|work|trabalho/.test(normalized)) {
-    return { status: "answered", answer: "Posso mostrar quatro projectos publicados no portefólio: Diga YES & Viva o Mundo Online, Jogue, Vença, Repita., Datas que Ligam e Somos Uma. Abro-os aqui no JARVIS, sem te mandar para outro site.", citationIds: ["project.catalog"], followUpQuestion: "Queres ver um projecto específico?", actionProposal: null };
+    return english
+      ? { status: "answered", answer: "I can show four projects published in the portfolio: Diga YES & Viva o Mundo Online, Jogue, Vença, Repita., Datas que Ligam and Somos Uma. I can open them here in JARVIS without sending you to another site.", citationIds: ["project.catalog"], followUpQuestion: "Would you like to explore a specific project?", actionProposal: null }
+      : { status: "answered", answer: "Posso mostrar quatro projectos publicados no portefólio: Diga YES & Viva o Mundo Online, Jogue, Vença, Repita., Datas que Ligam e Somos Uma. Abro-os aqui no JARVIS, sem te mandar para outro site.", citationIds: ["project.catalog"], followUpQuestion: "Queres ver um projecto específico?", actionProposal: null };
   }
   if (/servi|service|faz|oferec/.test(normalized)) {
-    return { status: "answered", answer: "A prática pública de Edmundo cobre Visual Identity, Art Direction, Editorial & Print, Digital Design e AI Creative Direction.", citationIds: ["services.catalog"], followUpQuestion: "Queres falar de um projecto ou de uma colaboração?", actionProposal: null };
+    return english
+      ? { status: "answered", answer: "Edmundo's public practice covers Visual Identity, Art Direction, Editorial & Print, Digital Design and AI Creative Direction.", citationIds: ["services.catalog"], followUpQuestion: "Would you like to talk about a project or a collaboration?", actionProposal: null }
+      : { status: "answered", answer: "A prática pública de Edmundo cobre Visual Identity, Art Direction, Editorial & Print, Digital Design e AI Creative Direction.", citationIds: ["services.catalog"], followUpQuestion: "Queres falar de um projecto ou de uma colaboração?", actionProposal: null };
   }
   if (/contact|contacto|email|falar|contrat/.test(normalized)) {
-    return { status: "answered", answer: "Para falar sobre um projecto, usa contact@edmundokutuzov.art. O site indica disponibilidade para projectos em 2026.", citationIds: ["identity.site-contact", "identity.site-availability"], followUpQuestion: null, actionProposal: null };
+    return english
+      ? { status: "answered", answer: "To discuss a project, email contact@edmundokutuzov.art. The public site lists Edmundo as available for projects in 2026.", citationIds: ["identity.site-contact", "identity.site-availability"], followUpQuestion: null, actionProposal: null }
+      : { status: "answered", answer: "Para falar sobre um projecto, usa contact@edmundokutuzov.art. O site indica disponibilidade para projectos em 2026.", citationIds: ["identity.site-contact", "identity.site-availability"], followUpQuestion: null, actionProposal: null };
   }
-  return { status: "answered", answer: "Edmundo Kutuzov é Art Director, Social Media Manager, AI Expert e Content Creator, a trabalhar a partir de Maputo, Moçambique. A prática cruza direcção de arte, sistemas de marca, design digital, conteúdo e inteligência artificial.", citationIds: ["identity.public-profile"], followUpQuestion: "Queres conhecer a experiência, os serviços ou os projectos?", actionProposal: null };
+  return english
+    ? { status: "answered", answer: "Edmundo Kutuzov is an Art Director, Social Media Manager, AI Expert and Content Creator working from Maputo, Mozambique. His practice brings together art direction, brand systems, digital design, content and artificial intelligence.", citationIds: ["identity.public-profile"], followUpQuestion: "Would you like to explore his experience, services or projects?", actionProposal: null }
+    : { status: "answered", answer: "Edmundo Kutuzov é Art Director, Social Media Manager, AI Expert e Content Creator, a trabalhar a partir de Maputo, Moçambique. A prática cruza direcção de arte, sistemas de marca, design digital, conteúdo e inteligência artificial.", citationIds: ["identity.public-profile"], followUpQuestion: "Queres conhecer a experiência, os serviços ou os projectos?", actionProposal: null };
 }
 
 async function generateAnswer(apiKey: string, question: string, history: Array<{ role: "user" | "assistant"; content: string }>) {
