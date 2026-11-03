@@ -16,7 +16,7 @@ describe("versioned Agent Core prompts", () => {
     expect(AGENT_SYSTEM_PROMPT).toContain("a aplicação exige confirmação do visitante");
     expect(AGENT_SYSTEM_PROMPT).toContain("action_proposed");
     expect(AGENT_SYSTEM_PROMPT).not.toContain("project_001");
-    expect(AGENT_PROMPT_VERSION).toBe("1.1.0");
+    expect(AGENT_PROMPT_VERSION).toBe("1.2.0");
   });
 
   it("serializes visitor text as untrusted JSON data, not system instructions", () => {
