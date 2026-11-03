@@ -155,7 +155,7 @@ async function generateAnswer(apiKey: string, question: string, history: Array<{
       },
       store: false,
     }),
-  );
+  });
   if (!response.ok) throw new Error("Gemini HTTP " + response.status);
   const payload = await response.json() as GeminiInteractionResponse;
   const text = extractGeminiText(payload);
