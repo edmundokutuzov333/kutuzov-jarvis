@@ -59,6 +59,19 @@ describe("versioned Agent Core prompts", () => {
     expect(decoded.outputContract.actionProposalContract.filterProjectCategories).toContain("Campaign Design");
   });
 
+  it("omits the navigation schema from ordinary knowledge questions", () => {
+    const knowledge = buildKnowledgeContext("WEBMASTERS", searchKnowledge("WEBMASTERS"));
+    const prompt = buildAgentUserPrompt({
+      question: "Que cargo está registado na WEBMASTERS?",
+      history: [],
+      knowledge,
+      includeActionContract: false,
+    });
+    const decoded = JSON.parse(prompt) as { outputContract: { actionProposal: string; actionProposalContract?: unknown } };
+    expect(decoded.outputContract.actionProposal).toContain("no navigation action");
+    expect(decoded.outputContract.actionProposalContract).toBeUndefined();
+  });
+
   it("does not place factual profile details in the system prompt", () => {
     expect(AGENT_SYSTEM_PROMPT).not.toContain("WEBMASTERS Limitada");
     expect(AGENT_SYSTEM_PROMPT).not.toContain("Toyota Moçambique");

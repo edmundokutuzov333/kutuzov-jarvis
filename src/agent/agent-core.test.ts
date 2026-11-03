@@ -38,6 +38,8 @@ describe("Agent Core orchestration", () => {
     expect(result.response.references[0]?.recordId).toBe("project.diga-yes");
     expect(model.calls).toBe(1);
     expect(model.lastRequest?.temperature).toBe(0.15);
+    expect(model.lastRequest?.maxTokens).toBe(256);
+    expect(model.lastRequest?.userPrompt).not.toContain("actionProposalContract");
   });
 
   it("does not mistake the person name alone for evidence about an unrelated topic", async () => {

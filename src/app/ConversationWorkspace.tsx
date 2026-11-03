@@ -33,7 +33,6 @@ import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
 import { inspectWebGpu, type WebGpuSupport } from "../platform/webgpu";
 import { LocalInferenceRuntime, LocalRuntimeError } from "../runtime/local-runtime";
-import { LOCAL_MODEL_METADATA } from "../runtime/model-config";
 import { buildDeterministicFallback } from "./conversation-utils";
 
 interface ChatMessage extends ConversationMessage {
@@ -98,9 +97,10 @@ function getProjectMetadata(record: KnowledgeEntry, key: string): string {
 
 interface ConversationWorkspaceProps {
   historyEnabled: boolean;
+  onBusyChange?: (busy: boolean) => void;
 }
 
-export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceProps) {
+export function ConversationWorkspace({ historyEnabled, onBusyChange }: ConversationWorkspaceProps) {
   const store = useMemo(() => new LocalConversationStore(), []);
   const host = useMemo(() => new DemoPortfolioHostAdapter(), []);
   const runtimeRef = useRef<LocalInferenceRuntime | null>(null);
@@ -133,8 +133,8 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
       setModelStatus(result.status === "available" ? "idle" : "unsupported");
       setLoadMessage(
         result.status === "available"
-          ? "WebGPU disponível. O modelo só será descarregado após a sua autorização."
-          : "WebGPU não está disponível. A pesquisa local continua funcional.",
+          ? "Pronto para activar o assistente."
+          : "A pesquisa local está disponível neste dispositivo.",
       );
     }).catch((reason: unknown) => {
       if (!active) return;
@@ -172,6 +172,11 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
   }, [historyEnabled, store]);
 
   useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
+
+  useEffect(() => {
     if (preferenceRef.current === historyEnabled) return;
     preferenceRef.current = historyEnabled;
     setCurrentSessionId(null);
@@ -200,7 +205,7 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
     try {
       await runtimeRef.current?.initialize((report) => {
         setLoadProgress(Math.max(0, Math.min(100, Math.round(report.progress * 100))));
-        setLoadMessage(report.text);
+        setLoadMessage(report.progress >= 1 ? "Assistente pronto." : "A preparar o assistente local...");
       });
       setModelStatus("ready");
       setLoadMessage("Modelo inicializado. As respostas com IA são geradas neste dispositivo.");
@@ -375,10 +380,8 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
           actionProposal: fallback.actionProposal,
           mode: "deterministic",
         };
-        setNotice(
-          "A resposta do modelo local não passou pela validação ou não pôde ser concluída. A pesquisa determinística foi usada em alternativa.",
-        );
-        setError(describeError(reason));
+        setNotice("A resposta não foi concluída. Apresento a informação disponível na pesquisa local.");
+        setError("");
       }
     } else {
       const fallback = buildDeterministicFallback(question);
@@ -486,7 +489,6 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
       <div className="chat-column">
         <div className="chat-toolbar">
           <div>
-            <p className="rail-label">PERSONAL KNOWLEDGE INTERFACE</p>
             <h2>Conversa</h2>
           </div>
           <div className="chat-toolbar__actions">
@@ -499,9 +501,7 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
               >
                 Histórico local <span>{sessions.length}</span>
               </button>
-            ) : (
-              <span className="toolbar-note">SESSÃO TEMPORÁRIA</span>
-            )}
+            ) : null}
             <button className="new-chat-button" type="button" onClick={startNewConversation}>
               + Nova conversa
             </button>
@@ -538,8 +538,8 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
           <div className="model-control__identity">
             <span className={modelStatus === "ready" ? "model-indicator is-ready" : "model-indicator"} />
             <div>
-              <strong>{LOCAL_MODEL_METADATA.name} <span>{LOCAL_MODEL_METADATA.quantization}</span></strong>
-              <small>{LOCAL_MODEL_METADATA.approximateListedArtifactSizeMb} MB listados · {LOCAL_MODEL_METADATA.contextWindow.toLocaleString("pt-PT")} tokens de contexto</small>
+              <strong>JARVIS <span>IA LOCAL</span></strong>
+              <small>As respostas são processadas neste dispositivo.</small>
             </div>
           </div>
           <div className="model-control__actions">
@@ -548,13 +548,13 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
             ) : modelStatus === "loading" ? (
               <button className="button button--quiet" type="button" onClick={cancelModelLoad}>Cancelar</button>
             ) : modelStatus === "ready" ? (
-              <button className="button button--quiet" type="button" onClick={() => void releaseModel()}>Libertar GPU</button>
+              <button className="button button--quiet" type="button" onClick={() => void releaseModel()}>Desactivar IA</button>
             ) : capability?.status === "available" ? (
               <button className="button button--primary" type="button" onClick={() => void loadModel()}>
-                Carregar modelo local
+                Activar IA local
               </button>
             ) : (
-              <span className="toolbar-note">WebGPU indisponível</span>
+              <span className="toolbar-note">Pesquisa disponível</span>
             )}
           </div>
         </div>
@@ -582,12 +582,8 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
         <div className="chat-transcript" aria-live="polite" aria-relevant="additions" aria-busy={busy}>
           {messages.length === 0 ? (
             <div className="welcome-state">
-              <div className="welcome-state__index"><span>01</span><span>INÍCIO DE SESSÃO</span></div>
-              <p className="welcome-state__eyebrow">KUTUZOV / PERSONAL INTELLIGENCE</p>
               <h3>O que gostaria de conhecer sobre Kutuzov?</h3>
-              <p className="welcome-state__description">
-                Percurso profissional, projectos, marcas, competências, serviços e abordagem criativa. As respostas factuais usam apenas informação publicada e verificada.
-              </p>
+              <p className="welcome-state__description">Explore o percurso, os projectos e o trabalho de Kutuzov.</p>
               <div className="suggestion-grid">
                 {SUGGESTIONS.map((suggestion, index) => (
                   <button
@@ -711,7 +707,7 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
           {busy ? (
             <div className="thinking-indicator" role="status">
               <span className="thinking-indicator__dots"><i /><i /><i /></span>
-              <span>{modelStatus === "ready" ? "A gerar e validar a resposta no dispositivo..." : "A pesquisar a base de conhecimento local..."}</span>
+              <span>{modelStatus === "ready" ? "A preparar a resposta..." : "A consultar informação..."}</span>
             </div>
           ) : null}
           <div ref={transcriptEndRef} />

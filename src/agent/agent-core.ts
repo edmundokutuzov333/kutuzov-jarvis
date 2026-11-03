@@ -269,6 +269,7 @@ export async function runAgentTurn(
       question: input.question,
       history: input.history,
       knowledge: context,
+      includeActionContract: actionRequested,
     });
 
     let generation: AgentGenerationResult;
@@ -276,7 +277,7 @@ export async function runAgentTurn(
       generation = await options.model.generate({
         systemPrompt: AGENT_SYSTEM_PROMPT,
         userPrompt,
-        maxTokens: 420,
+        maxTokens: 256,
         temperature: 0.15,
         topP: 0.82,
         signal: controller.signal,

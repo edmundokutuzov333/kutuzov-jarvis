@@ -91,25 +91,23 @@ export function ActionEnginePanel() {
     <section className="action-lab" aria-labelledby="action-lab-title">
       <div className="action-lab__heading">
         <div>
-          <p className="eyebrow">ACTION ENGINE / HOST ADAPTER</p>
-          <h2 id="action-lab-title">Controlled navigation commands.</h2>
+          <p className="eyebrow">COMANDOS</p>
+          <h2 id="action-lab-title">Acções disponíveis</h2>
           <p className="action-lab__description">
-            Nine registered commands. Every parameter is validated. Each button
-            is an explicit approval to dispatch one command to this isolated demo host.
+            Escolha uma acção. O JARVIS pedirá confirmação antes de executar.
           </p>
         </div>
         <span className="action-lab__badge">SANDBOX / DEMO ONLY</span>
       </div>
 
       <div className="action-lab__warning" role="note">
-        This is an isolated in-memory demonstration. It does not access the official
-        portfolio, real routes, CMS data or published website.
+        Demonstração isolada. Não altera o portefólio oficial.
       </div>
 
       <div className="action-lab__meta">
         <span>{ACTION_REGISTRY.length} REGISTERED ACTIONS</span>
-        <span>CONFIRMATION REQUIRED</span>
-        <span>NO ARBITRARY URLS</span>
+        <span>COM CONFIRMAÇÃO</span>
+        <span>ACESSO LIMITADO</span>
       </div>
 
       <div className="action-lab__buttons">

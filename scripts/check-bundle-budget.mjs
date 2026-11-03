@@ -8,8 +8,8 @@ const BUDGETS = {
   htmlRawBytes: 2 * 1024,
   initialJavaScriptRawBytes: 450 * 1024,
   initialJavaScriptGzipBytes: 135 * 1024,
-  initialCssRawBytes: 40 * 1024,
-  initialCssGzipBytes: 10 * 1024,
+  initialCssRawBytes: 48 * 1024,
+  initialCssGzipBytes: 12 * 1024,
 };
 
 function fail(message) {

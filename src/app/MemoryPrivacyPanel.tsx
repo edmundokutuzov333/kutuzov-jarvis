@@ -98,24 +98,20 @@ export function MemoryPrivacyPanel({
     <section className="memory-panel" aria-labelledby="memory-panel-title">
       <div className="memory-panel__heading">
         <div>
-          <p className="eyebrow">MEMORY & PRIVACY / PHASE 07</p>
-          <h2 id="memory-panel-title">Your conversations stay yours.</h2>
+          <p className="eyebrow">PRIVACIDADE</p>
+          <h2 id="memory-panel-title">A sua memória, sob o seu controlo.</h2>
           <p className="memory-panel__description">
-            O histórico é opcional e fica apenas neste browser. Não é enviado para
-            servidores, não é sincronizado e nunca altera o conhecimento profissional do JARVIS.
+            As conversas ficam apenas neste dispositivo. Não são enviadas nem sincronizadas.
           </p>
         </div>
-        <span className="memory-panel__badge">LOCAL / INDEXEDDB</span>
+        <span className="memory-panel__badge">LOCAL</span>
       </div>
 
       <div className="memory-panel__control">
         <div>
-          <strong>Guardar histórico neste dispositivo</strong>
+          <strong>Guardar conversas</strong>
           <p>
-            Desactivado por defeito. Ao activar, o JARVIS pode guardar sessões e
-            mensagens para recuperar o contexto em visitas seguintes. Desactivar
-            esta opção não apaga o que já foi guardado. Use o botão abaixo para
-            eliminar todos os registos locais.
+            As conversas ficam guardadas apenas neste browser. Pode apagar tudo quando quiser.
           </p>
         </div>
         <label className="memory-toggle">
@@ -132,13 +128,13 @@ export function MemoryPrivacyPanel({
 
       <div className="memory-panel__stats" aria-live="polite">
         <div>
-          <span>SESSÕES LOCAIS</span>
+          <span>CONVERSAS</span>
           <strong data-testid="memory-session-count">
             {status?.sessionCount ?? "—"}
           </strong>
         </div>
         <div>
-          <span>MENSAGENS LOCAIS</span>
+          <span>MENSAGENS</span>
           <strong data-testid="memory-message-count">
             {status?.messageCount ?? "—"}
           </strong>
@@ -153,9 +149,7 @@ export function MemoryPrivacyPanel({
 
       <div className="memory-panel__footer">
         <p>
-          Limites: 20 sessões, 100 mensagens por sessão e retenção de 90 dias.
-          O contexto enviado ao Agent Core usa apenas as últimas 6 mensagens,
-          com máximo de 500 caracteres por mensagem.
+          O histórico permanece neste dispositivo e pode ser eliminado a qualquer momento.
         </p>
         <button
           className="button button--quiet"
@@ -164,7 +158,7 @@ export function MemoryPrivacyPanel({
           onClick={() => void deleteHistory()}
           type="button"
         >
-          Apagar todo o histórico local
+          Apagar histórico
         </button>
       </div>
 

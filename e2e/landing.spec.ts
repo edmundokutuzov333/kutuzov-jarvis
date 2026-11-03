@@ -215,3 +215,14 @@ test("renders the immersive Jarvis core and lets desktop windows be dragged", as
   expect(after.x).toBeGreaterThan(before.x + 40);
   expect(after.y).toBeGreaterThan(before.y + 40);
 });
+
+
+test("renders the abstract animated core without a lettermark in its centre", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const core = page.getByTestId("jarvis-core");
+  await expect(core).toBeVisible();
+  await expect(core.locator(".core-orb__monogram")).toHaveCount(0);
+  await expect(core.locator(".core-orb__plasma")).toHaveCount(4);
+  await expect(core.locator(".core-orb__particle")).toHaveCount(6);
+});
