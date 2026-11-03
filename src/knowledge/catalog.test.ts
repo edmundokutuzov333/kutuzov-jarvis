@@ -26,13 +26,13 @@ describe("Kutuzov knowledge catalog", () => {
     expect(count("principle")).toBe(4);
     expect(count("process_step")).toBe(4);
     expect(count("metric")).toBe(5);
-    expect(KNOWLEDGE_RECORD_COUNT).toBe(61);
+    expect(KNOWLEDGE_RECORD_COUNT).toBe(63);
   });
 
   it("attributes every record to the audited source", () => {
     for (const record of KNOWLEDGE_CATALOG.records) {
-      expect(record.source.path).toBe("docs/PORTFOLIO-DATA-AUDIT.md");
-      expect(record.source.capturedAt).toBe("2026-11-02");
+      expect(["docs/PORTFOLIO-DATA-AUDIT.md", "docs/PUBLIC-SOURCES-AUDIT.md"]).toContain(record.source.path);
+      expect(["2026-11-02", "2026-11-03"]).toContain(record.source.capturedAt);
       expect(record.id.length).toBeGreaterThan(2);
     }
   });

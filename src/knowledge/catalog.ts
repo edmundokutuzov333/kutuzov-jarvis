@@ -40,6 +40,36 @@ function publicFact(
   };
 }
 
+function publicWebFact(
+  id: string,
+  kind: KnowledgeKind,
+  title: string,
+  content: string,
+  keywords: string[],
+  entity: string,
+  metadata: Metadata = {},
+  entities: string[] = [],
+): KnowledgeEntry {
+  return {
+    id,
+    kind,
+    title,
+    content,
+    keywords,
+    entities,
+    published: true,
+    visibility: "public_fact",
+    verification: "verified_snapshot",
+    source: {
+      type: "public_site_snapshot",
+      path: "docs/PUBLIC-SOURCES-AUDIT.md",
+      entity,
+      capturedAt: "2026-11-03",
+    },
+    metadata,
+  };
+}
+
 function editorialGuardrail(
   id: string,
   title: string,
@@ -95,6 +125,27 @@ const records: KnowledgeEntry[] = [
       intro: "I'm Edmundo Kutuzov, an art director from Maputo operating globally, building brand systems that earn attention rather than beg for it. 30+ brands. One obsession: work that refuses to be ignored.",
     },
     ["Edmundo Kutuzov", "Maputo"],
+  ),
+
+  publicWebFact(
+    "identity.site-availability",
+    "identity",
+    "Disponibilidade pública para projectos em 2026",
+    "O site público indica que Edmundo Kutuzov está disponível para projectos em 2026. O JARVIS pode orientar visitantes para contacto, mas não deve prometer disponibilidade de agenda, orçamento ou contratação sem confirmação humana.",
+    ["disponibilidade", "available", "projectos", "projects", "2026", "contacto", "contact"],
+    "edmundokutuzov.art home",
+    { availableForProjects: true, year: 2026 },
+    ["Edmundo Kutuzov", "edmundokutuzov.art"],
+  ),
+  publicWebFact(
+    "identity.site-contact",
+    "identity",
+    "Contacto público",
+    "O site público disponibiliza o email contact@edmundokutuzov.art para contacto profissional. O JARVIS deve apresentá-lo apenas quando o visitante pedir contacto ou quiser falar sobre um projecto.",
+    ["contacto", "contact", "email", "projecto", "project", "contact@edmundokutuzov.art"],
+    "edmundokutuzov.art contact",
+    { email: "contact@edmundokutuzov.art", purpose: "professional contact" },
+    ["Edmundo Kutuzov", "contact@edmundokutuzov.art"],
   ),
 
   publicFact("experience.webmasters", "experience", "WEBMASTERS Limitada", "Experiência publicada: Art Director & Content Creator na WEBMASTERS Limitada, de 2024 até ao presente, segundo o snapshot de 2 de Novembro de 2026.", ["experiência", "experience", "career", "empresa", "company", "art director", "content creator"], "experience_items", { organization: "WEBMASTERS Limitada", role: "Art Director & Content Creator", period: "2024 - Present" }, ["WEBMASTERS Limitada"]),

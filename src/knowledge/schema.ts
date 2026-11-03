@@ -28,7 +28,7 @@ export const KnowledgeVerificationSchema = z.enum([
 
 export const KnowledgeSourceSchema = z
   .object({
-    type: z.enum(["portfolio_cms_snapshot", "portfolio_audit_note"]),
+    type: z.enum(["portfolio_cms_snapshot", "portfolio_audit_note", "public_site_snapshot"]),
     path: z.string().min(1).max(240),
     entity: z.string().min(1).max(120),
     capturedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
