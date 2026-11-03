@@ -1,3 +1,4 @@
+/* global console, process */
 import { gzipSync } from "node:zlib";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, basename } from "node:path";
