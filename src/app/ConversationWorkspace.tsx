@@ -262,6 +262,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
             minScore: 2,
             kinds: ["project"],
           }).map((item) => item.record);
+          assistantMessage = {
             ...makeMessage("assistant", result.response.answer),
             projects,
           };
