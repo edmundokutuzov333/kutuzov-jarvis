@@ -1,7 +1,7 @@
 # Fase 6: Action Engine
 
 **Data:** 3 de Novembro de 2026  
-**Estado:** Implementação concluída e submetida aos quality gates. A execução real no portefólio está deliberadamente fora desta fase.
+**Estado:** Implementação concluída e validada por CI. A execução real no portefólio está deliberadamente fora desta fase.
 
 ## Objectivo
 
@@ -127,10 +127,30 @@ Foram preparados testes unitários para:
 
 Os testes do adaptador demo provam o contrato e o seu estado em memória, não a navegação do portefólio publicado.
 
+## Resultado CI
+
+Workflow [JARVIS quality gates, run 41554009167](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41554009167) concluído com sucesso:
+
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 13 ficheiros, 86/86 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 3/3 testes aprovados.
+- Lockfile: preservado. Não foram adicionadas dependências.
+
+### Tamanhos observados no build
+
+- Entrada JavaScript inicial: 337.01 KB, gzip 102.76 KB.
+- CSS: 11.73 KB, gzip 2.95 KB.
+- Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
+- Worker WebLLM: 6,121.59 KB.
+
+A entrada inicial cresceu relativamente à Fase 5 devido à consola de demonstração e aos contratos do Action Engine. O runtime e o Worker mantêm-se em chunks separados. O Playwright valida que os artefactos do modelo e os chunks WebLLM não são solicitados na visita inicial.
+
 ## Resultado e limitações
 
 **Implementado:** schemas, registry, nove handlers, host adapter interface, demo adapter, consola sandbox e ligação de propostas ao contrato do Agent Core.  
-**Testado:** validação automatizada e Playwright, a confirmar pelo workflow do commit.  
+**Testado:** TypeScript, ESLint, 86 testes unitários, build e 3 testes Playwright; workflow concluído com sucesso.  
 **Pendente:** qualidade real das propostas produzidas por Qwen3 em GPU física, dependente da aceitação da Fase 3.  
 **Não implementado:** adaptador para rotas reais do portefólio, navegação real ou integração no CMS.
 

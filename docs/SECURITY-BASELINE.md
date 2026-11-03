@@ -68,7 +68,7 @@ A validação automatizada actual comprova detecção, estados, carregamento sob
 - Pergunta, histórico e documentos recuperados são serializados como dados JSON, nunca concatenados ao System Prompt.
 - Histórico aceita apenas roles user/assistant e tem limites de quantidade e tamanho.
 - O modelo recebe apenas o contexto seleccionado pelo retrieval.
-- O modelo não recebe ferramentas nem autorização de navegação nesta fase.
+- O modelo não recebe ferramentas executáveis nem acesso directo ao host. Na Fase 6 recebe apenas o catálogo de propostas tipadas permitidas; cada proposta é validada e exige confirmação antes do dispatch.
 - Saída tem schema estrito, campos fechados, limite de tamanho e rejeição de HTML.
 - Resposta factual exige pelo menos uma citação.
 - Cada ID de citação é validado contra a allowlist de factos públicos recuperados.

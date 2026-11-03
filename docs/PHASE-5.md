@@ -91,7 +91,7 @@ Implementado:
 - Histórico truncado a 400 caracteres por mensagem no prompt.
 - Pergunta, histórico e Knowledge Context serializados como JSON na mensagem de utilizador.
 - Conteúdo recuperado nunca é promovido a instrução.
-- Sem HTML, JavaScript, URLs ou ferramentas geradas pelo modelo.
+- Sem HTML, JavaScript, URLs ou ferramentas executáveis geradas pelo modelo. A proposta tipada de navegação foi adicionada posteriormente na Fase 6 e não tem capacidade de execução.
 - Saída estrita, sem propriedades extra.
 - Citações verificadas contra a allowlist de referências recuperadas.
 - Rejeição de output vazio, inválido ou demasiado grande.
