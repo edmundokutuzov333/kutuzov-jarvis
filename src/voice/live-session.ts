@@ -111,6 +111,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
     try {
       const token = await getLiveToken();
       const socket = new WebSocket(LIVE_ENDPOINT + "?access_token=" + encodeURIComponent(token.token));
+      let setupSent = false;
       socketRef.current = socket;
 
       const context = new AudioContext();
@@ -134,6 +135,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
             outputAudioTranscription: {},
           },
         }));
+        setupSent = true;
         openedRef.current = true;
         setState("listening");
       };
@@ -200,7 +202,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
       const source = context.createMediaStreamSource(stream);
       const processor = context.createScriptProcessor(4096, 1, 1);
       processor.onaudioprocess = (event) => {
-        if (socket.readyState !== WebSocket.OPEN) return;
+        if (socket.readyState !== WebSocket.OPEN || !setupSent) return;
         const bytes = pcm16FromFloat32(event.inputBuffer.getChannelData(0));
         socket.send(JSON.stringify({ realtimeInput: { audio: { data: toBase64(bytes), mimeType: "audio/pcm;rate=16000" } } }));
       };
