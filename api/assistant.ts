@@ -162,9 +162,13 @@ function fallbackAnswer(question: string): ParsedAnswer {
 }
 
 async function generateAnswer(apiKey: string, question: string, history: Array<{ role: "user" | "assistant"; content: string }>) {
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+  const timeout = new AbortController();
+  const timeoutId = setTimeout(() => timeout.abort(), 8_000);
+  try {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    signal: timeout.signal,
     body: JSON.stringify({
       model: MODEL,
       input: JSON.stringify({ question, history }),
@@ -194,11 +198,14 @@ async function generateAnswer(apiKey: string, question: string, history: Array<{
       store: false,
     }),
   });
-  if (!response.ok) throw new Error("Gemini HTTP " + response.status);
-  const payload = await response.json() as GeminiInteractionResponse;
-  const text = extractGeminiText(payload);
-  if (!text) throw new Error("Gemini sem resposta");
-  return parseModelOutput(text);
+    if (!response.ok) throw new Error("Gemini HTTP " + response.status);
+    const payload = await response.json() as GeminiInteractionResponse;
+    const text = extractGeminiText(payload);
+    if (!text) throw new Error("Gemini sem resposta");
+    return parseModelOutput(text);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
