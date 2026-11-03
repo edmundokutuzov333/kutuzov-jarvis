@@ -163,9 +163,9 @@ export function buildDeterministicFallback(
   question: string,
 ): DeterministicConversationResult {
   const actionProposal = resolveDeterministicAction(question);
-  if (actionProposal) {
+  if (actionProposal?.action === "OPEN_PROJECT") {
     return {
-      answer: "Identifiquei um comando permitido. Reveja a acção abaixo e confirme para a executar no ambiente de demonstração. Esta operação não navega no portefólio oficial.",
+      answer: "Vou abrir o projecto que pediu.",
       references: [],
       projects: [],
       actionProposal,
@@ -200,10 +200,8 @@ export function buildDeterministicFallback(
   }
 
   const answer = publicResults.length > 0
-    ? "A pesquisa local encontrou informação publicada relacionada com a pergunta. Estes são os registos recuperados:\n\n" +
-      excerpts.join("\n\n") +
-      "\n\nEste modo usa pesquisa local, não um modelo de inteligência artificial."
-    : "Ainda não encontrei informação pública e verificada suficiente para responder. Sem o modelo local carregado, só posso fazer pesquisa determinística na base de conhecimento.";
+    ? "Posso partilhar consigo o que está publicado:\n\n" + excerpts.join("\n\n")
+    : "Ainda não encontrei informação pública confirmada sobre isso. Prefiro não inventar.";
 
   return {
     answer,
