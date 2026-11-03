@@ -1,4 +1,8 @@
 import { AgentHistorySchema, AgentQuestionSchema } from "../src/agent/contracts";
+
+declare const process: {
+  env: Record<string, string | undefined>;
+};
 import type { AgentGenerationRequest, AgentModelPort } from "../src/agent/model-port";
 import { runAgentTurn } from "../src/agent/agent-core";
 
