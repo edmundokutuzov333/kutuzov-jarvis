@@ -88,7 +88,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange, voice, voi
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ConversationSession[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const voiceOutputRef = useRef("");
 
   useEffect(() => {
     let active = true;
