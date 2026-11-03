@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0 a 6 implementadas e validadas por CI nos respectivos limites documentados. Fase 7 implementada e submetida aos quality gates; integração do histórico na interface conversacional continua pendente da Fase 8. Fases 8 a 10 ainda não iniciadas. A aceitação integrada do modelo continua dependente de inferência física com WebGPU.
+> **Estado actual:** Fases 0 a 7 implementadas e validadas por CI nos limites documentados. A Fase 7 fornece memória local opcional e controlos de privacidade; a ligação ao ciclo conversacional final continua pendente da Fase 8. Fases 8 a 10 ainda não iniciadas. A aceitação integrada do modelo continua dependente de inferência física com WebGPU.
 
 ## Objectivo
 
@@ -42,12 +42,12 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 4. Knowledge Engine | Implementada e validada por CI; avaliação integrada com modelo real pendente |
 | 5. Agent Core | Implementada e validada por CI; avaliação real com Qwen3 pendente |
 | 6. Action Engine | Implementada e validada por CI no sandbox; adaptador do portefólio real não implementado |
-| 7. Memória e privacidade | Implementada; validação CI desta revisão a confirmar; ligação à UI conversacional pendente |
+| 7. Memória e privacidade | Implementada e validada por CI; ligação à UI conversacional pendente da Fase 8 |
 | 8. Interface conversacional | Não iniciada |
 | 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 7 implementa persistência local e controlos de privacidade, mas a ligação ao ciclo conversacional só será feita na Fase 8. Estes critérios são separados e continuam pendentes.
+A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A memória local está implementada e validada, mas a ligação ao ciclo conversacional só será feita na Fase 8. Estes critérios são separados e continuam pendentes.
 
 ## Fase 1: investigação e auditoria
 
@@ -197,24 +197,25 @@ Consultar [docs/PHASE-7.md](docs/PHASE-7.md).
 
 ## Quality gates
 
-Último workflow da Fase 6: [JARVIS quality gates, run 41554009167](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41554009167).
+Último workflow da Fase 7: [JARVIS quality gates, run 41556771231](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41556771231).
 
-Resultados:
+Resultados confirmados:
 - TypeScript: aprovado.
 - ESLint: aprovado.
-- Vitest: 13 ficheiros, 86/86 testes aprovados.
+- Vitest: 14 ficheiros, 90/90 testes aprovados.
 - Build de produção: aprovado.
-- Playwright Chromium: 3/3 testes aprovados.
-- Lockfile: preservado. Não foram adicionadas dependências.
+- Playwright Chromium: 7/7 testes aprovados.
+- Dependências: nenhuma nova.
+- Lockfile: preservado.
 
-### Tamanhos observados no build
+### Tamanhos observados no build da Fase 7
 
-- Entrada JavaScript inicial: 337.01 KB, gzip 102.76 KB.
-- CSS: 11.73 KB, gzip 2.95 KB.
+- Entrada JavaScript inicial: 350.84 KB, gzip 106.54 KB.
+- CSS: 14.97 KB, gzip 3.47 KB.
 - Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
 - Worker WebLLM: 6,121.59 KB.
 
-O build continua a avisar sobre chunks acima de 500 KB devido ao runtime WebLLM. O runtime e os pesos não são carregados na visita inicial. Estes números são medições do build, não benchmarks de inferência ou memória numa GPU física.
+O build continua a avisar sobre chunks acima de 500 KB devido ao runtime WebLLM. Estes artefactos permanecem separados do bundle inicial e não são descarregados pelo visitante antes de pedir o carregamento do modelo. Os pesos do modelo não estão incluídos nestes tamanhos. Estes números são medições do build, não benchmarks de inferência ou memória numa GPU física.
 
 ## Executar localmente
 
