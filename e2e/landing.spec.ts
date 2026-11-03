@@ -82,7 +82,7 @@ test("uses honest deterministic search when WebGPU is unavailable", async ({ pag
   await expect(page.getByText(
     /A pesquisa local encontrou informação publicada relacionada com a pergunta/,
   )).toBeVisible();
-  await expect(page.getByText("Perfil público de Edmundo Kutuzov")).toBeVisible();
+  await expect(page.getByText("Perfil público de Edmundo Kutuzov", { exact: true })).toBeVisible();
   await expect(page.getByText(/PESQUISA LOCAL/).last()).toBeVisible();
 });
 
