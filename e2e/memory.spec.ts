@@ -74,6 +74,13 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
   await expect(page.getByTestId("memory-session-count")).toHaveText("1");
   await expect(page.getByTestId("memory-message-count")).toHaveText("100");
 
+  await historyToggle.uncheck();
+  await expect(page.getByTestId("memory-state")).toHaveText("DESACTIVADO");
+  await expect(page.getByTestId("memory-session-count")).toHaveText("1");
+  await expect(page.getByTestId("memory-message-count")).toHaveText("100");
+  await historyToggle.check();
+  await expect(page.getByTestId("memory-state")).toHaveText("ACTIVO");
+
   page.on("dialog", (dialog) => dialog.accept());
   await page.getByTestId("memory-delete-all").click();
   await expect(page.getByTestId("memory-session-count")).toHaveText("0");
@@ -127,4 +134,24 @@ test("retains no more than twenty local conversation sessions", async ({ page })
 
   expect(result.count).toBe(20);
   expect(result.allTitlesAreGeneric).toBe(true);
+});
+
+test("gracefully reports when IndexedDB is unavailable", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "indexedDB", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+  await page.goto("/");
+
+  await expect(page.getByRole("region", {
+    name: "Your conversations stay yours.",
+  })).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText(
+    "não disponibiliza IndexedDB",
+  );
+  await expect(page.getByRole("checkbox", {
+    name: "Guardar histórico neste dispositivo",
+  })).toBeDisabled();
 });
