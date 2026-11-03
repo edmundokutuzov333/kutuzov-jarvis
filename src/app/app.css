@@ -1269,3 +1269,93 @@ html,body,#root{width:100%;min-height:100%;margin:0}html,body{overflow:hidden;ba
   .floating-window .chat-column{min-height:560px}
 }
 @media(prefers-reduced-motion:reduce){.core-orb *,.core-orb__aura{animation:none!important}}
+
+
+/* Visitor experience: speak as Kutuzov, keep only what helps the visitor. */
+.desktop-topbar{height:58px;padding:0 28px;border-bottom-color:rgba(196,216,246,.09);background:rgba(8,13,25,.46)}
+.desktop-brand{min-width:0;gap:11px}
+.desktop-brand__name{font-size:9px;letter-spacing:.17em;color:#e8edf8}
+.desktop-brand__name b{display:none}
+.desktop-topbar__right,.desktop-rail,.desktop-footer{display:none!important}
+.core-stage{inset:58px 0 0 0!important}
+.core-orb{left:50%;top:43%;width:min(43vw,570px)}
+.core-stage__identity{bottom:6%;opacity:.78}
+.core-stage__identity .eyebrow{font-size:7px;letter-spacing:.19em}
+.core-stage__identity h1{font-size:clamp(27px,3.2vw,42px)}
+.core-stage__identity p{margin:10px 0 0;color:#a9b8d7;font-size:11px;line-height:1.6}
+.floating-window{border-radius:15px;border-color:rgba(174,199,244,.2);background:linear-gradient(145deg,rgba(21,31,51,.9),rgba(9,15,28,.94))}
+.window--conversation{top:12%;left:5.5%;width:min(720px,45vw);height:min(660px,72vh)}
+.window--memory{top:15%;right:5%;width:min(390px,29vw);max-height:unset}
+.floating-window__bar{min-height:44px;padding-inline:14px}
+.floating-window__heading strong{font-size:11px}
+.floating-window .conversation-workspace{display:block;min-height:0;height:100%;margin:0;border:0;background:transparent;box-shadow:none}
+.floating-window .conversation-rail{display:none}
+.floating-window .chat-column{height:100%;min-height:0;padding:0 22px 16px}
+.floating-window .chat-toolbar{min-height:45px;justify-content:flex-end;border-bottom:0}
+.floating-window .chat-toolbar__actions{gap:8px}
+.floating-window .text-control,.floating-window .new-chat-button{min-height:31px;padding-inline:10px;font-size:9px;border-radius:7px}
+.assistant-presence{display:flex;align-items:center;gap:8px;min-height:27px;padding:0 0 9px;color:#95a6c7;font-size:9px}
+.assistant-presence__dot{width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:#7c8ba7}
+.assistant-presence__dot.is-active{background:#9bb8ff;box-shadow:0 0 12px rgba(135,170,255,.75)}
+.floating-window .chat-transcript{min-height:180px;padding:12px 2px 18px}
+.floating-window .welcome-state{width:100%;padding:16px 0 20px}
+.floating-window .welcome-state h3{max-width:500px;margin:6px 0 0;font-size:clamp(26px,2.4vw,34px);line-height:1.08}
+.floating-window .welcome-state__description{max-width:480px;margin-top:11px;font-size:11px;line-height:1.7}
+.floating-window .suggestion-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:20px}
+.floating-window .suggestion-grid button{min-height:54px;grid-template-columns:minmax(0,1fr) 12px;gap:7px;padding:10px;border-radius:8px;font-size:9px;line-height:1.45}
+.floating-window .suggestion-grid button span{color:#d6e0f5;font-family:inherit;font-size:9px;letter-spacing:0}
+.floating-window .suggestion-grid button b{font-size:11px}
+.floating-window .chat-message{padding:13px 0 15px}
+.floating-window .chat-message__meta{margin-bottom:6px;color:#8fa7d5;font-size:7px;letter-spacing:.1em}
+.floating-window .chat-message__body{margin:0;color:#e4eaf5;font-size:12px;line-height:1.75;white-space:pre-wrap}
+.floating-window .project-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}
+.floating-window .project-card{display:block;padding:13px;border-color:rgba(171,196,240,.16);border-radius:9px;background:linear-gradient(145deg,rgba(92,128,205,.1),rgba(12,20,35,.52));transition:border-color .2s ease,transform .2s ease,background .2s ease}
+.floating-window .project-card:hover{border-color:rgba(153,184,250,.48);background:linear-gradient(145deg,rgba(92,128,205,.17),rgba(12,20,35,.7));transform:translateY(-2px)}
+.floating-window .project-card__kind{color:#94a7cb;font-size:7px;letter-spacing:.045em;text-transform:none}
+.floating-window .project-card h4{margin:10px 0 0;font-size:13px}
+.floating-window .project-card__link{display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:9px;border-top:1px solid rgba(171,196,240,.13);color:#a8c0f2;font-size:9px}
+.floating-window .project-card__link b{font-size:12px;font-weight:400}
+.floating-window .chat-composer{padding-top:11px;border-top-color:rgba(171,196,240,.14)}
+.floating-window .chat-composer textarea{min-height:59px;padding:12px 13px 6px}
+.floating-window .chat-composer__footer{padding:6px 8px 8px}
+.floating-window .chat-composer__footer>span{display:none}
+.floating-window .send-button{min-height:33px;padding-inline:14px;font-family:inherit;font-size:9px;font-weight:600;letter-spacing:0;text-transform:none;border-radius:7px}
+.floating-window .chat-footnote{display:none}
+.floating-window .memory-panel{padding:20px 19px 17px;border:0;border-radius:0;background:transparent}
+.floating-window .memory-panel__heading h2{margin:0;max-width:280px;color:#f0f4fc;font:500 22px/1.12 "Syne",sans-serif;letter-spacing:-.045em}
+.floating-window .memory-panel__description{margin:10px 0 0;color:#9fadc6;font-size:10px;line-height:1.65}
+.floating-window .memory-panel__control{align-items:center;margin-top:18px;padding-block:14px;border-top:1px solid rgba(171,196,240,.14);border-bottom:1px solid rgba(171,196,240,.14)}
+.floating-window .memory-panel__control strong{color:#e7edf8;font-size:10px}
+.floating-window .memory-panel__control p{margin-top:7px;color:#8f9db6;font-size:9px;line-height:1.6}
+.floating-window .memory-panel__status{margin:13px 0 0;color:#95a7c9;font-size:9px;line-height:1.55}
+.floating-window .memory-panel__footer{margin-top:14px;padding-top:0;border-top:0}
+.floating-window .memory-panel__footer .button{min-height:31px;font-family:inherit;font-size:9px;letter-spacing:0;text-transform:none;border-radius:7px}
+.desktop-dock{bottom:17px;gap:5px;padding:6px;border-color:rgba(177,199,240,.18);border-radius:13px;background:rgba(9,15,28,.68)}
+.dock-app{display:flex;align-items:center;justify-content:center;gap:8px;width:auto;min-width:105px;height:38px;padding:0 12px;border-radius:8px;color:#a5b8df}
+.dock-app>span{font-size:15px}
+.dock-app small{position:static;transform:none;opacity:1;padding:0;border:0;background:transparent;color:inherit;font:9px "Manrope",sans-serif;letter-spacing:0}
+.dock-app i{bottom:2px}
+@media(max-width:1100px){.window--conversation{left:3%;width:52vw}.window--memory{right:2%;width:31vw}.core-orb{width:48vw}}
+@media(max-width:760px){
+  html,body{overflow:auto}
+  .jarvis-desktop{height:auto;min-height:100dvh;overflow:visible;padding:56px 12px 92px}
+  .desktop-topbar{position:fixed;height:56px;padding-inline:14px}
+  .desktop-brand__name{font-size:8px}
+  .core-stage{position:relative;inset:auto!important;height:315px;margin:0;overflow:hidden}
+  .core-orb{top:43%;left:50%;width:min(78vw,310px)}
+  .core-stage__identity{bottom:0}
+  .core-stage__identity h1{font-size:26px}
+  .core-stage__identity p{font-size:10px}
+  .floating-window{position:relative;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;margin:0 0 13px;transform:none!important}
+  .floating-window__content{max-height:none}
+  .floating-window .conversation-workspace{height:auto}
+  .floating-window .chat-column{min-height:520px;padding-inline:14px}
+  .floating-window .chat-transcript{min-height:250px;max-height:48vh}
+  .floating-window .suggestion-grid{grid-template-columns:1fr}
+  .floating-window .suggestion-grid button{min-height:44px}
+  .floating-window .project-card-grid{grid-template-columns:1fr}
+  .floating-window .memory-panel{padding:18px 15px}
+  .desktop-dock{position:fixed;bottom:9px;max-width:calc(100vw - 24px)}
+  .dock-app{min-width:0;height:36px;padding-inline:12px}
+}
+@media(prefers-reduced-motion:reduce){.core-orb *,.core-orb__aura{animation:none!important}}
