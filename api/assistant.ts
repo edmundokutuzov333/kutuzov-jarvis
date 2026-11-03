@@ -14,14 +14,17 @@ interface ApiResponse {
   json(value: unknown): void;
 }
 
-interface GeminiPart {
+interface GeminiOutputPart {
+  type?: string;
   text?: string;
 }
 
-interface GeminiGenerateResponse {
-  candidates?: Array<{
-    content?: { parts?: GeminiPart[] };
-    finishReason?: string;
+interface GeminiInteractionResponse {
+  status?: string;
+  steps?: Array<{
+    type?: string;
+    status?: string;
+    content?: GeminiOutputPart[];
   }>;
 }
 
@@ -89,8 +92,7 @@ function createGeminiModel(apiKey: string): AgentModelPort {
       let response: Response;
       try {
         response = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/" +
-            encodeURIComponent(MODEL) + ":generateContent",
+          "https://generativelanguage.googleapis.com/v1beta/interactions",
           {
             method: "POST",
             headers: {
@@ -98,19 +100,29 @@ function createGeminiModel(apiKey: string): AgentModelPort {
               "x-goog-api-key": apiKey,
             },
             body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: request.systemPrompt }],
+              model: MODEL,
+              input: request.userPrompt,
+              system_instruction: request.systemPrompt,
+              generation_config: {
+                thinking_level: "low",
+                max_output_tokens: Math.min(request.maxTokens, 800),
               },
-              contents: [{
-                role: "user",
-                parts: [{ text: request.userPrompt }],
-              }],
-              generationConfig: {
-                temperature: request.temperature,
-                topP: request.topP,
-                maxOutputTokens: Math.min(request.maxTokens, 800),
-                responseMimeType: "application/json",
+              response_format: {
+                type: "text",
+                mime_type: "application/json",
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "string", enum: ["answered", "insufficient_evidence", "action_proposed"] },
+                    answer: { type: "string" },
+                    citationIds: { type: "array", items: { type: "string" } },
+                    followUpQuestion: { type: ["string", "null"] },
+                    actionProposal: { type: ["object", "null"] },
+                  },
+                  required: ["status", "answer", "citationIds", "followUpQuestion", "actionProposal"],
+                },
               },
+              store: false,
             }),
             signal: request.signal,
           },
@@ -124,9 +136,17 @@ function createGeminiModel(apiKey: string): AgentModelPort {
         throw new Error("Gemini devolveu HTTP " + response.status + ".");
       }
 
-      const payload = await response.json() as GeminiGenerateResponse;
-      const text = payload.candidates?.[0]?.content?.parts
-        ?.map((part) => typeof part.text === "string" ? part.text : "")
+      const payload = await response.json() as GeminiInteractionResponse;
+      if (payload.status !== "completed") {
+        throw new Error("Gemini não concluiu a interacção.");
+      }
+
+      const finalOutput = [...(payload.steps ?? [])]
+        .reverse()
+        .find((step) => step.type === "model_output" && step.status === "done");
+      const text = finalOutput?.content
+        ?.filter((part) => part.type === "text" && typeof part.text === "string")
+        .map((part) => part.text ?? "")
         .join("")
         .trim();
 

@@ -377,7 +377,7 @@ A Knowledge Base é uma fonte RAG, não fine-tuning. Factos ainda não publicado
 
 A experiência de produção utiliza `gemini-3.8-flash` através de `/api/assistant`, uma função server-side no Vercel. A chave é lida apenas de `GEMINI_API_KEY`; não é incluída nos ficheiros públicos do site.
 
-A base é RAG, não fine-tuning. O Agent Core recupera factos publicados do snapshot, envia apenas esse contexto à Gemini e valida a resposta, referências e propostas de acção. Perguntas de perfil completo podem consultar o catálogo público inteiro; perguntas normais usam contexto limitado para reduzir custo e latência.
+A base é RAG, não fine-tuning. O Agent Core recupera factos publicados do snapshot, envia apenas esse contexto à Gemini Interactions API com `store: false` e valida a resposta, referências e propostas de acção. Perguntas de perfil completo podem consultar o catálogo público inteiro; perguntas normais usam contexto limitado para reduzir custo e latência.
 
 O histórico persistente continua opcional e local ao browser. Quando Gemini está activa, a pergunta actual e até seis mensagens recentes podem ser enviadas à API. Não introduzir segredos, moradas privadas ou contactos privados.
 

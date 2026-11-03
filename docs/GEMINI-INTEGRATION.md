@@ -23,11 +23,13 @@ Gemini não é treinado com os dados do utilizador. O JARVIS usa Retrieval-Augme
 ## Modelo e autenticação
 
 - Modelo predefinido: `gemini-3.8-flash`.
-- Endpoint: Gemini `models.generateContent`.
+- Endpoint: Gemini Interactions API `POST /v1beta/interactions`.
 - Autenticação: header `x-goog-api-key`.
 - Segredo: `GEMINI_API_KEY`, exclusivamente server-side.
 - Modelo configurável por `GEMINI_MODEL`, também server-side.
-- JSON output mode e schema validation local pelo Agent Core.
+- JSON output mode através de `response_format` e schema validation local pelo Agent Core.
+- `store: false` para não guardar o objecto Interaction do lado da Google; a aplicação envia o histórico recente no contexto e não usa `previous_interaction_id`.
+- A resposta é lida em `steps[].content[]` do último passo `model_output`.
 
 A API oficial identifica `gemini-3.8-flash` como modelo estável e suporta saída estruturada. A chave nunca pode ser exposta no browser.
 
@@ -72,7 +74,7 @@ Quando o visitante pedir explicitamente para abrir um projecto:
 - Corpo limitado a 8 KB; pergunta até 2.000 caracteres; histórico até seis mensagens com até 500 caracteres cada.
 - Rate limit best-effort de 18 pedidos/minuto/IP em memória de cada instância Vercel. Não é um rate limiter distribuído e deve ser substituído por protecção de rede/distributed KV antes de tráfego elevado.
 - Respostas e erros não incluem o conteúdo da chave.
-- A função não escreve prompts, respostas ou conversas em bases de dados.
+- A função não escreve prompts, respostas ou conversas em bases de dados. A chamada Interactions inclui `store: false`, pelo que o pedido não fica guardado como Interaction recuperável nos logs de Interactions da Google.
 
 ## Configuração Vercel
 

@@ -5,6 +5,7 @@
 ## Dados e privacidade
 - Quando `GEMINI_API_KEY` está configurada, a inferência pública é processada pela Gemini API através de uma função privada no Vercel. Sem chave, fica activo apenas o fallback determinístico.
 - O browser nunca recebe a chave Gemini; a chave só existe em GEMINI_API_KEY no ambiente do servidor.
+- Usar a Gemini Interactions API com `store: false`, sem persistir o pedido como Interaction nos logs da Google.
 - Enviar ao Gemini apenas a pergunta, até seis mensagens recentes de contexto e factos públicos seleccionados pela Knowledge Base.
 - Usar apenas o tier pago do Gemini com billing activo; não usar a quota gratuita para dados profissionais ou pessoais.
 - O histórico opcional continua guardado localmente no browser e não é sincronizado.
