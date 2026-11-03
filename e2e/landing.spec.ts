@@ -78,11 +78,11 @@ test("uses the Gemini endpoint and speaks without exposing provider labels", asy
   await expect(page.locator(".chat-message__meta").filter({ hasText: "KUTUZOV" })).toBeVisible();
 });
 
-test("keeps the visitor interface focused on conversation and privacy", async ({ page }) => {
+test("keeps the visitor interface focused on conversation and ephemeral session", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
   await expect(page.locator('[data-window-id="memory"]')).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Abrir Privacidade" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Abrir Sessão" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
   await expect(page.getByText(/SANDBOX|DEMO HOST|REGISTERED ACTIONS|FONTES CONSULTADAS/)).toHaveCount(0);
 });
