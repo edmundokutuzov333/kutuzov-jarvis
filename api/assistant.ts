@@ -1,10 +1,7 @@
-import { AgentHistorySchema, AgentQuestionSchema } from "../src/agent/contracts";
-
 declare const process: {
   env: Record<string, string | undefined>;
 };
 import type { AgentGenerationRequest, AgentModelPort } from "../src/agent/model-port";
-import { runAgentTurn } from "../src/agent/agent-core";
 
 interface ApiRequest {
   method?: string;
@@ -197,6 +194,11 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.status(503).json({ message: "A IA remota ainda não está configurada." });
     return;
   }
+
+  const [{ AgentHistorySchema, AgentQuestionSchema }, { runAgentTurn }] = await Promise.all([
+    import("../src/agent/contracts"),
+    import("../src/agent/agent-core"),
+  ]);
 
   const contentLength = Number(headerValue(request.headers["content-length"]));
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
