@@ -54,6 +54,40 @@ describe("Agent Core input and output contracts", () => {
     })).toThrow();
   });
 
+  it("accepts a closed action proposal without pretending it was executed", () => {
+    const parsed = AgentModelOutputSchema.parse({
+      status: "action_proposed",
+      answer: "Posso abrir a secção Contact.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: { action: "OPEN_CONTACT", parameters: {} },
+    });
+    expect(parsed.actionProposal?.action).toBe("OPEN_CONTACT");
+  });
+
+  it("rejects invalid project slugs inside model action proposals", () => {
+    expect(() => AgentModelOutputSchema.parse({
+      status: "action_proposed",
+      answer: "Vou abrir o projecto.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: {
+        action: "OPEN_PROJECT",
+        parameters: { slug: "../../admin" },
+      },
+    })).toThrow();
+  });
+
+  it("defaults actionProposal to null when no action is suggested", () => {
+    const parsed = AgentModelOutputSchema.parse({
+      status: "answered",
+      answer: "Kutuzov é identificado como Art Director.",
+      citationIds: ["identity.public-profile"],
+      followUpQuestion: null,
+    });
+    expect(parsed.actionProposal).toBeNull();
+  });
+
   it("rejects citations on insufficient-evidence responses", () => {
     expect(() => AgentModelOutputSchema.parse({
       status: "insufficient_evidence",

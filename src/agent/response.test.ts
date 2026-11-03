@@ -40,6 +40,22 @@ describe("structured Agent Core response validation", () => {
     }), knowledge)).toThrow();
   });
 
+  it("returns an action proposal as an inert suggestion", () => {
+    const emptyKnowledge = buildKnowledgeContext("Abre Contact", []);
+    const output = {
+      status: "action_proposed",
+      answer: "Posso abrir a secção Contact.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: { action: "OPEN_CONTACT", parameters: {} },
+    };
+    const response = parseAgentModelOutput(JSON.stringify(output), emptyKnowledge);
+
+    expect(response.status).toBe("action_proposed");
+    expect(response.actionProposal?.action).toBe("OPEN_CONTACT");
+    expect(response.references).toEqual([]);
+  });
+
   it("rejects oversized output and invalid markup", () => {
     expect(() => parseAgentModelOutput("x".repeat(12_001), knowledge)).toThrow();
     expect(() => parseAgentModelOutput(JSON.stringify({

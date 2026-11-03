@@ -150,3 +150,21 @@ O System Prompt define comportamento e regras. Não contém factos biográficos.
 O adaptador `createLocalAgentModel` usa o runtime WebLLM existente. O runtime passou a aceitar system prompt e parâmetros limitados de geração, mantendo o carregamento sob pedido e o Worker.
 
 A validação é estrutural, não uma garantia semântica de entailment. Não há constrained decoding confirmado. A qualidade real do Qwen3, obediência JSON, português e factualidade só podem ser aprovados após geração física e benchmark.
+
+
+## 13. Action Engine implementado na Fase 6
+
+O Action Engine em `src/actions/` estabelece uma fronteira de navegação de comandos fechados:
+
+- `schemas.ts`: schema Zod discriminado para propostas, comandos do host, categorias e slugs publicados.
+- `registry.ts`: registry de nove acções, confirmação explícita, validação e dispatch.
+- `handlers/`: nove conversores tipados de propostas para comandos internos.
+- `host/adapter.ts`: interface HostAdapter e resultado explícito.
+- `host/demo-adapter.ts`: adaptador isolado que altera estado em memória e regista comandos.
+- `ActionEnginePanel.tsx`: consola sandbox com nove botões e indicação DEMO ONLY.
+
+O modelo pode incluir `actionProposal` no contrato estruturado do Agent Core v1.1.0. A proposta é validada mas nunca executada pelo Agent Core. O consumidor só pode chamar `dispatchAction` depois de confirmação explícita. O registry rejeita acções desconhecidas, parâmetros extra, categorias e slugs não autorizados.
+
+O host recebe apenas comandos internos tipados, nunca URLs livres ou a saída bruta do modelo. Não existem comandos de escrita, publicação, eliminação, execução de código ou acesso ao DOM.
+
+O adaptador real para o portefólio não foi criado. A demonstração não toca no CMS nem em rotas reais; a integração exige uma implementação HostAdapter dentro do repositório anfitrião, depois de nova auditoria e autorização própria.

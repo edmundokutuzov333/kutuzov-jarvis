@@ -154,3 +154,15 @@ O aviso de chunks acima de 500 KB mantém-se devido ao runtime de inferência. O
 **Não iniciado:** Action Engine, memória persistente e UI conversacional.
 
 A Fase 5 está implementada no código e preparada para integração. Não está aprovada como assistente funcional de produção até a inferência local real e a qualidade das respostas serem demonstradas.
+
+
+## Actualização de contrato na Fase 6
+
+O contrato do Agent Core passou para a versão **1.1.0** para suportar propostas de navegação:
+
+- Foi adicionado o campo `actionProposal`, que contém null ou uma proposta validada pela whitelist do Action Engine.
+- Foi adicionado o estado `action_proposed` para pedidos claros de navegação sem resposta factual.
+- O modelo nunca recebe o adaptador anfitrião nem uma interface de execução.
+- O Agent Core devolve a proposta sem a executar. A confirmação e o dispatch pertencem à Fase 6.
+
+Esta alteração não muda a política de evidência factual nem transforma propostas em acções executadas.

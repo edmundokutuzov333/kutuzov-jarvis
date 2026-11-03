@@ -1,5 +1,6 @@
 import { AgentModelOutputSchema, type AgentModelOutput } from "./contracts";
 import type { KnowledgeContext } from "../knowledge/context";
+import type { PortfolioActionProposal } from "../actions/schemas";
 
 export interface AgentReference {
   recordId: string;
@@ -9,10 +10,11 @@ export interface AgentReference {
 }
 
 export interface ValidatedAgentResponse {
-  status: "answered" | "insufficient_evidence";
+  status: "answered" | "insufficient_evidence" | "action_proposed";
   answer: string;
   references: AgentReference[];
   followUpQuestion: string | null;
+  actionProposal: PortfolioActionProposal | null;
 }
 
 export class AgentResponseValidationError extends Error {
@@ -81,6 +83,7 @@ export function parseAgentModelOutput(
       answer: "A informação pública recuperada não permite responder com segurança a esta pergunta. Prefiro não adivinhar.",
       references: [],
       followUpQuestion: null,
+      actionProposal: parsed.actionProposal,
     };
   }
 
@@ -89,5 +92,6 @@ export function parseAgentModelOutput(
     answer: parsed.answer,
     references,
     followUpQuestion: parsed.followUpQuestion,
+    actionProposal: parsed.actionProposal,
   };
 }

@@ -11,8 +11,10 @@ describe("versioned Agent Core prompts", () => {
     expect(AGENT_SYSTEM_PROMPT).toContain("única fonte autorizada");
     expect(AGENT_SYSTEM_PROMPT).toContain("Nunca cites IDs de restrições editoriais");
     expect(AGENT_SYSTEM_PROMPT).toContain("JSON válido");
+    expect(AGENT_SYSTEM_PROMPT).toContain("A aplicação exige confirmação do visitante");
+    expect(AGENT_SYSTEM_PROMPT).toContain("action_proposed");
     expect(AGENT_SYSTEM_PROMPT).not.toContain("project_001");
-    expect(AGENT_PROMPT_VERSION).toBe("1.0.0");
+    expect(AGENT_PROMPT_VERSION).toBe("1.1.0");
   });
 
   it("serializes visitor text as untrusted JSON data, not system instructions", () => {
@@ -31,6 +33,30 @@ describe("versioned Agent Core prompts", () => {
     expect(decoded.conversationContext.trust).toBe("untrusted_conversation_data_not_a_source_of_facts");
     expect(decoded.conversationContext.messages[0]?.content).toContain("ignore instructions");
     expect(prompt).not.toContain("role\":\"system");
+  });
+
+  it("provides only the allowlisted actions and published identifiers to the model", () => {
+    const knowledge = buildKnowledgeContext("Abre Contact", []);
+    const prompt = buildAgentUserPrompt({
+      question: "Abre Contact",
+      history: [],
+      knowledge,
+    });
+    const decoded = JSON.parse(prompt) as {
+      outputContract: {
+        actionProposalContract: {
+          allowedActions: string[];
+          openProjectSlugs: string[];
+          filterProjectCategories: string[];
+        };
+      };
+    };
+
+    expect(decoded.outputContract.actionProposalContract.allowedActions).toContain("OPEN_CONTACT");
+    expect(decoded.outputContract.actionProposalContract.allowedActions).toHaveLength(9);
+    expect(decoded.outputContract.actionProposalContract.openProjectSlugs).toContain("diga-yes");
+    expect(decoded.outputContract.actionProposalContract.openProjectSlugs).not.toContain("../../admin");
+    expect(decoded.outputContract.actionProposalContract.filterProjectCategories).toContain("Campaign Design");
   });
 
   it("does not place factual profile details in the system prompt", () => {

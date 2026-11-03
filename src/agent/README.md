@@ -36,3 +36,10 @@ A saída do modelo contém `status`, `answer`, `citationIds` e `followUpQuestion
 - A validação JSON é feita com prompt e Zod após geração, não por constrained decoding.
 - A validação de pertença da citação não é uma prova semântica de que a fonte sustenta cada frase.
 - O modelo real continua pendente de teste físico WebGPU.
+
+
+## Actualização da Fase 6: propostas de navegação
+
+O Agent Core v1.1.0 pode devolver `actionProposal` com um comando pertencente à whitelist do Action Engine. O estado `action_proposed` é usado para um pedido explícito de navegação sem resposta factual. A proposta é validada e devolvida ao consumidor, mas não é executada pelo Agent Core.
+
+A UI deve pedir confirmação explícita antes de chamar `dispatchAction`. O modelo não recebe o adaptador anfitrião.

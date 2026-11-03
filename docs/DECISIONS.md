@@ -181,3 +181,28 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** limitar pergunta a 2.000 caracteres, histórico a 6 mensagens, contexto recuperado a 3.200 caracteres/6 registos, output do modelo a 12.000 caracteres e geração a 420 tokens como configuração inicial.  
 **Motivo:** reduzir prompt injection, custo de contexto e pressão sobre o modelo de 0.6B.  
 **Consequência:** histórico não é persistido. Perguntas de seguimento podem usar a última pergunta do visitante para reconstituir o assunto; persistência e eliminação continuam na Fase 7.
+
+
+## ADR-0032: Action Engine baseado em comandos de domínio fechados
+**Estado:** Aceite e implementado  
+**Decisão:** expor nove acções com schemas Zod estritos e mapear cada proposta para um HostCommand sem URL ou rota arbitrária.  
+**Motivo:** permitir navegação previsível sem conceder acesso ao DOM, ao router ou ao CMS ao modelo.  
+**Consequência:** o catálogo actual limita categorias e slugs aos quatro projectos e disciplinas confirmados no snapshot público.
+
+## ADR-0033: confirmação explícita e host como autoridade final
+**Estado:** Aceite e implementado  
+**Decisão:** nenhuma acção é enviada ao host sem `confirmed: true`; o host recebe apenas um comando já validado e pode rejeitá-lo.  
+**Motivo:** separar proposta do modelo de autorização e execução.  
+**Consequência:** o futuro UI deve apresentar um controlo de confirmação ao visitante. O clique de teste no sandbox é a confirmação desse ambiente isolado.
+
+## ADR-0034: demo host isolado; sem adaptador real nesta fase
+**Estado:** Aceite e implementado  
+**Decisão:** usar um DemoPortfolioHostAdapter com estado em memória para validar comandos, sem integrar o portefólio oficial.  
+**Motivo:** verificar o contrato sem conhecer ou alterar rotas reais antes da fase de integração autorizada.  
+**Consequência:** environment `demo` é explícito; a demonstração não altera site, CMS nem dados publicados. O adaptador de produção fica pendente.
+
+## ADR-0035: proposta de acção no contrato do Agent Core v1.1.0
+**Estado:** Aceite e implementado  
+**Decisão:** adicionar `actionProposal` ao JSON de saída do Agent Core e um estado `action_proposed` para pedidos explícitos de navegação sem resposta factual.  
+**Motivo:** permitir propostas tipadas sem function calling autónomo nem permissões de execução no modelo.  
+**Consequência:** o schema valida a proposta, mas a execução continua exclusivamente no Action Engine após confirmação.

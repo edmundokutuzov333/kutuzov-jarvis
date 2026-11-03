@@ -77,3 +77,19 @@ A validação automatizada actual comprova detecção, estados, carregamento sob
 - O pedido de geração é cancelável e os limites de tokens/temperatura/top-p são impostos pela aplicação.
 
 Estes controlos reduzem a superfície de risco, mas não provam que o modelo não possa produzir uma frase semanticamente incorrecta com uma fonte válida. A validação semântica e os testes adversariais no modelo real continuam pendentes para a Fase 9. Não afirmar invulnerabilidade a prompt injection.
+
+
+## Controlos do Action Engine (Fase 6)
+
+- Registry fechado de nove IDs.
+- Schema discriminado de propostas e HostCommands, validado com Zod.
+- Propriedades extra e parâmetros inválidos são rejeitados.
+- Categorias e slugs limitados a valores presentes no snapshot público auditado.
+- Confirmação explícita obrigatória antes do dispatch.
+- O modelo apenas devolve `actionProposal`; não recebe uma referência ao host nem ao DOM.
+- O dispatcher traduz propostas validadas para comandos internos tipados.
+- O host recebe apenas o comando validado e é a autoridade final.
+- Não existem URLs, rotas arbitrárias, JavaScript, HTML, acesso ao sistema de ficheiros, escrita no CMS ou eliminação de conteúdos.
+- O DemoPortfolioHostAdapter opera apenas num estado em memória, identificado como `demo`.
+
+O adaptador real do portefólio ainda não existe. A aplicação anfitriã terá de validar novamente cada comando e resolver apenas rotas/componentes actualmente autorizados. A aprovação do sandbox não prova a integração nem a segurança das rotas reais.

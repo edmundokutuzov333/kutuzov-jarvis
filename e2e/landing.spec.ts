@@ -21,7 +21,7 @@ test("keeps the local model unloaded until the visitor explicitly starts it", as
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /knowledge into grounded answers/i }),
+    page.getByRole("heading", { name: /intent into controlled action/i }),
   ).toBeVisible();
   await expect(page.locator(".engine-status__value").first()).toHaveText("NOT CHECKED");
   await expect(
@@ -73,4 +73,43 @@ test("checks browser WebGPU capability without downloading model artifacts", asy
 
   expect(artifactRequests).toHaveLength(0);
   expect(runtimeRequests).toHaveLength(0);
+});
+
+
+test("runs all nine allowlisted actions only inside the isolated demo host", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByText("SANDBOX / DEMO ONLY")).toBeVisible();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("home");
+
+  await page.getByTestId("action-show-projects").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("projects");
+
+  await page.getByTestId("action-filter-projects").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("projects / category=Campaign Design");
+
+  await page.getByTestId("action-open-project").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("projects / slug=diga-yes");
+
+  await page.getByTestId("action-show-clients").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("clients");
+
+  await page.getByTestId("action-show-experience").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("experience");
+
+  await page.getByTestId("action-show-services").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("services");
+
+  await page.getByTestId("action-show-about").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("about");
+
+  await page.getByTestId("action-open-contact").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("contact");
+
+  await page.getByTestId("action-reset-interface").click();
+  await expect(page.getByTestId("demo-host-state")).toHaveText("home");
+
+  await expect(page.getByTestId("action-result-status")).toHaveText("EXECUTED");
+  await expect(page.getByText("ENVIRONMENT: DEMO")).toBeVisible();
+  await expect(page.getByText("9 EVENTS")).toBeVisible();
 });

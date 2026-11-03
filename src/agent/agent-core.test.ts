@@ -93,6 +93,45 @@ describe("Agent Core orchestration", () => {
     expect(model.lastRequest?.userPrompt).toContain("Diga YES");
   });
 
+  it("allows the model to propose a whitelisted navigation action without factual evidence", async () => {
+    const model = new TestModel(JSON.stringify({
+      status: "action_proposed",
+      answer: "Posso abrir a secção Contact.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: { action: "OPEN_CONTACT", parameters: {} },
+    }));
+
+    const result = await runAgentTurn("Abre Contact", { model });
+
+    expect(result.state).toBe("completed");
+    if (result.state !== "completed") return;
+    expect(result.response.status).toBe("action_proposed");
+    expect(result.response.actionProposal?.action).toBe("OPEN_CONTACT");
+    expect(result.response.references).toEqual([]);
+    expect(result.modelUsed).toBe(true);
+    expect(model.calls).toBe(1);
+  });
+
+  it("returns proposals without dispatching them to a host adapter", async () => {
+    const model = new TestModel(JSON.stringify({
+      status: "action_proposed",
+      answer: "Posso abrir a secção Contact.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: { action: "OPEN_CONTACT", parameters: {} },
+    }));
+
+    const result = await runAgentTurn("Abre Contact", { model });
+    expect(result.state).toBe("completed");
+    if (result.state !== "completed") return;
+    expect(result.response.actionProposal).toEqual({
+      action: "OPEN_CONTACT",
+      parameters: {},
+    });
+    expect(Object.keys(result.response)).not.toContain("executed");
+  });
+
   it("does not invoke the model when it is not ready", async () => {
     await expect(runAgentTurn("Diga YES")).rejects.toMatchObject({
       code: "MODEL_UNAVAILABLE",

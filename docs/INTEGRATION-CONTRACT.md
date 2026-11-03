@@ -1,45 +1,59 @@
 # Fronteira de integração com o portefólio
 
-**Estado:** contrato preliminar. A implementação fica fora da Fase 0.
+**Estado:** contrato de comandos definido na Fase 6. Adaptador real e integração permanecem fora da fase independente.
 
 ## Repositórios separados
+
 - JARVIS independente: edmundokutuzov333/kutuzov-jarvis
 - Portefólio oficial: edmundokutuzov333/kutuzovportfolio333
 
 Durante as fases independentes, o repositório do portefólio é apenas fonte de referência em modo de leitura. Não alterar código, dados, configurações, branches ou deployments do portefólio.
 
 ## Direcção dos dados
+
 CMS público do portefólio → adaptador de dados → Knowledge Base/runtime JARVIS
 
 O JARVIS não deve escrever no CMS, administrar conteúdo, alterar projectos ou obter dados administrativos.
 
-## Adaptador anfitrião
-A aplicação do portefólio será responsável por:
-- Fornecer apenas dados públicos e publicados.
-- Expor uma lista fechada de acções suportadas.
-- Validar os identificadores e parâmetros das acções.
-- Executar navegação e alterações de apresentação permitidas.
-- Devolver resultados explícitos ao JARVIS.
+## Fronteira anfitriã
 
-O JARVIS será responsável por:
-- Interpretar a pergunta.
-- Consultar o contexto fornecido.
-- Propor uma acção compatível com o contrato.
-- Apresentar a resposta e referências.
+O contrato `HostAdapter` está em `src/actions/host/adapter.ts`. A aplicação anfitriã deverá implementar:
 
-## Acções previstas, sujeitas à auditoria da aplicação anfitriã
-- Mostrar projectos.
-- Filtrar projectos por categoria.
-- Abrir um projecto publicado por slug válido.
-- Mostrar clientes e marcas publicados.
-- Mostrar experiência pública.
-- Mostrar serviços publicados.
-- Abrir a página About.
-- Abrir a página Contact.
+- `environment: "portfolio"`.
+- `dispatch(command: HostCommand)`.
+- Validação repetida através de `HostCommandSchema`.
+- Resolução dos comandos para rotas/componentes já existentes.
+- Verificação dos slugs contra projectos públicos efectivamente disponíveis.
+- Resposta explícita de sucesso ou rejeição.
 
-Nenhuma acção é considerada funcional nesta fase. Os nomes, schemas e eventos finais serão definidos após inspeccionar a implementação real do portefólio.
+O JARVIS só envia comandos de domínio fechados. Não envia URLs, nomes de ficheiros, seletores DOM ou rotas livres.
+
+## Comandos suportados
+
+- `projects.show`
+- `projects.filter` com uma das categorias auditadas.
+- `projects.open` com um dos quatro slugs publicados auditados.
+- `clients.show`
+- `experience.show`
+- `services.show`
+- `about.open`
+- `contact.open`
+- `interface.reset`
+
+Os nomes de rotas reais não são assumidos neste contrato. O host deve mapear os comandos para a arquitectura efectiva depois de uma nova auditoria do repositório oficial.
+
+## Proposta e autorização
+
+O Agent Core v1.1.0 pode devolver uma proposta validada em `actionProposal`. A proposta não é executada. A UI tem de a apresentar ao visitante, pedir confirmação explícita e chamar `dispatchAction` apenas depois de o visitante confirmar.
+
+O Action Engine rejeita IDs desconhecidos, parâmetros inválidos, propriedades adicionais e ausência de confirmação.
+
+## Demonstração isolada
+
+`DemoPortfolioHostAdapter` implementa a interface no ambiente independente. Mantém estado em memória e é identificado como `demo`. A consola mostra claramente `SANDBOX / DEMO ONLY`. Não acede ao site publicado, router, CMS ou dados administrativos.
 
 ## Regras de integração
+
 - Não duplicar CMS nem base de dados.
 - Não enviar dados privados ou administrativos.
 - Não criar endpoints de escrita para o JARVIS.

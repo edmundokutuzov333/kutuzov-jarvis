@@ -1,4 +1,5 @@
 import { LocalEnginePanel } from "./LocalEnginePanel";
+import { ActionEnginePanel } from "./ActionEnginePanel";
 
 const systemStatus = [
   {
@@ -13,6 +14,12 @@ const systemStatus = [
     detail: "Versioned prompt, bounded conversation context, structured JSON validation, citation checks and deterministic abstention. UI integration belongs to Phase 8.",
     state: "MODEL TEST PENDING",
   },
+  {
+    label: "Action Engine",
+    value: "Demo adapter active",
+    detail: "Nine allowlisted commands, strict schemas, explicit confirmation and an isolated sandbox host.",
+    state: "SANDBOX / DEMO",
+  },
 ] as const;
 
 export function App() {
@@ -26,40 +33,41 @@ export function App() {
         <div className="topbar__meta">
           <span className="status-dot" aria-hidden="true" />
           <span>INDEPENDENT BUILD</span>
-          <span className="topbar__phase">PHASE 05</span>
+          <span className="topbar__phase">PHASE 06</span>
         </div>
       </header>
 
       <section className="intro" aria-labelledby="intro-title">
-        <p className="eyebrow">PERSONAL INTELLIGENCE / AGENT CORE</p>
+        <p className="eyebrow">PERSONAL INTELLIGENCE / ACTION ENGINE</p>
         <h1 id="intro-title">
-          Knowledge into
+          Intent into
           <br />
-          grounded answers.
+          controlled action.
         </h1>
         <p className="intro__description">
-          JARVIS retrieves verified information about Kutuzov, prepares a
-          bounded context and validates the local model&apos;s structured answer.
-          Inference remains on this device and starts only after you load the model.
+          JARVIS can propose a limited navigation command. The application
+          validates every parameter, requests confirmation and sends only a
+          typed command to an authorised host adapter.
         </p>
         <div className="foundation-note">
-          <span className="foundation-note__index">05 / 10</span>
+          <span className="foundation-note__index">06 / 10</span>
           <p>
-            No remote inference API. No dedicated AI server. The Agent Core
-            is implemented; physical model validation and the conversational
-            interface remain pending.
+            Model proposals never execute themselves. The current host is an
+            isolated sandbox; the official portfolio has not been connected.
           </p>
         </div>
       </section>
 
       <LocalEnginePanel />
 
+      <ActionEnginePanel />
+
       <section className="systems" aria-labelledby="systems-title">
         <div className="systems__heading">
           <p className="eyebrow">CURRENT CORE SYSTEMS</p>
           <h2 id="systems-title">Core implementation status</h2>
         </div>
-        <div className="systems__grid systems__grid--two">
+        <div className="systems__grid">
           {systemStatus.map((system, index) => (
             <article className="system-card" key={system.label}>
               <div className="system-card__top">

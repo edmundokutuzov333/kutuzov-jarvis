@@ -115,6 +115,16 @@ function buildRetrievalQuery(
   return (previousUserQuestion.slice(0, 300) + " " + question).trim().slice(0, 500);
 }
 
+function isExplicitActionRequest(question: string): boolean {
+  const normalized = question
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("en");
+  const hasActionVerb = /\b(mostra|mostrar|abre|abrir|ver|vai|navega|filtra|repor|reiniciar|show|open|view|display|navigate|go|take)\b/.test(normalized);
+  const hasKnownTarget = /\b(projectos|projetos|projects|project|portefolio|portfolio|clientes|clients|marcas|brands|experiencia|experience|carreira|servicos|services|about|sobre|contacto|contact|interface)\b/.test(normalized);
+  return hasActionVerb && hasKnownTarget;
+}
+
 function makeAbstention(constraintIds: readonly string[]): ValidatedAgentResponse {
   if (constraintIds.includes("limitation.biography-pending")) {
     return {
@@ -122,6 +132,7 @@ function makeAbstention(constraintIds: readonly string[]): ValidatedAgentRespons
       answer: "O perfil público ainda não contém uma biografia consolidada e confirmada. Posso, no entanto, apresentar os cargos, a localização e o posicionamento que estão publicados.",
       references: [],
       followUpQuestion: "Quer consultar a experiência profissional e o posicionamento publicados?",
+      actionProposal: null,
     };
   }
 
@@ -131,6 +142,7 @@ function makeAbstention(constraintIds: readonly string[]): ValidatedAgentRespons
       answer: "O portefólio identifica o projecto, mas a informação pública consultada não confirma a função individual desempenhada por Kutuzov. Não vou atribuir-lhe uma responsabilidade por inferência.",
       references: [],
       followUpQuestion: "Quer ver os dados do projecto que estão publicados?",
+      actionProposal: null,
     };
   }
 
@@ -140,6 +152,7 @@ function makeAbstention(constraintIds: readonly string[]): ValidatedAgentRespons
       answer: "O portefólio apresenta métricas declaradas, mas a fonte disponível não permite tratá-las como resultados auditados externamente.",
       references: [],
       followUpQuestion: "Quer consultar os valores indicados no portefólio?",
+      actionProposal: null,
     };
   }
 
@@ -149,6 +162,7 @@ function makeAbstention(constraintIds: readonly string[]): ValidatedAgentRespons
       answer: "O portefólio apresenta níveis e pontuações para algumas competências, mas esses valores não correspondem a uma avaliação ou certificação independente.",
       references: [],
       followUpQuestion: "Quer consultar as competências e os níveis publicados?",
+      actionProposal: null,
     };
   }
 
@@ -157,6 +171,7 @@ function makeAbstention(constraintIds: readonly string[]): ValidatedAgentRespons
     answer: "Não encontrei informação pública e verificada suficiente para responder a essa pergunta. Prefiro não adivinhar.",
     references: [],
     followUpQuestion: null,
+    actionProposal: null,
   };
 }
 
@@ -222,7 +237,10 @@ export async function runAgentTurn(
     };
   }
 
-  if (context.status !== "matched" || context.facts.length === 0) {
+  const hasPublicEvidence = context.status === "matched" && context.facts.length > 0;
+  const actionRequested = isExplicitActionRequest(input.question);
+
+  if (!hasPublicEvidence && !actionRequested) {
     return {
       state: "completed",
       response: makeAbstention(context.constraints.map((constraint) => constraint.id)),
