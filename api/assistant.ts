@@ -281,7 +281,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
       contextCharacters: PUBLIC_CONTEXT.length,
       truncated: false,
     },
-    promptVersion: "1.3.0",
+    promptVersion: "1.4.0",
     modelUsed,
   });
 }
