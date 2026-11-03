@@ -96,7 +96,6 @@ export function MemoryPrivacyPanel() {
           </p>
         </div>
         <label className="memory-toggle">
-          <span className="sr-only">Guardar histórico neste dispositivo</span>
           <input
             aria-label="Guardar histórico neste dispositivo"
             checked={status?.historyEnabled ?? false}
