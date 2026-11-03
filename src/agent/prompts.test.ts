@@ -11,7 +11,7 @@ describe("versioned Agent Core prompts", () => {
     expect(AGENT_SYSTEM_PROMPT).toContain("única fonte autorizada");
     expect(AGENT_SYSTEM_PROMPT).toContain("Nunca cites IDs de restrições editoriais");
     expect(AGENT_SYSTEM_PROMPT).toContain("JSON válido");
-    expect(AGENT_SYSTEM_PROMPT).toContain("A aplicação exige confirmação do visitante");
+    expect(AGENT_SYSTEM_PROMPT).toContain("a aplicação exige confirmação do visitante");
     expect(AGENT_SYSTEM_PROMPT).toContain("action_proposed");
     expect(AGENT_SYSTEM_PROMPT).not.toContain("project_001");
     expect(AGENT_PROMPT_VERSION).toBe("1.1.0");

@@ -3,8 +3,11 @@
 **Âmbito:** requisitos de concepção para a primeira versão. Não representa ainda uma auditoria de segurança ou uma certificação.
 
 ## Dados e privacidade
-- As perguntas e respostas são processadas localmente.
-- Não enviar conteúdo de conversas para APIs de IA.
+- Quando `GEMINI_API_KEY` está configurada, a inferência pública é processada pela Gemini API através de uma função privada no Vercel. Sem chave, fica activo apenas o fallback determinístico.
+- O browser nunca recebe a chave Gemini; a chave só existe em GEMINI_API_KEY no ambiente do servidor.
+- Enviar ao Gemini apenas a pergunta, até seis mensagens recentes de contexto e factos públicos seleccionados pela Knowledge Base.
+- Usar apenas o tier pago do Gemini com billing activo; não usar a quota gratuita para dados profissionais ou pessoais.
+- O histórico opcional continua guardado localmente no browser e não é sincronizado.
 - Não criar telemetria com conteúdo de mensagens.
 - O histórico, se persistido, fica no dispositivo do visitante.
 - Deve existir uma opção clara para apagar o histórico.
@@ -31,13 +34,12 @@
 - A aplicação anfitriã deve ser a autoridade final para executar acções.
 
 ## Browser e runtime
-- Detectar suporte antes de tentar inicializar WebGPU.
-- Não assumir disponibilidade de GPU ou memória.
-- Tratar falhas de inicialização e cancelamento.
-- Carregar o runtime apenas sob pedido.
-- Validar origem, versão e integridade dos artefactos do modelo.
+- A produção utiliza Gemini através de uma função server-side no Vercel.
+- A chave Gemini nunca é incluída nos assets do browser ou no Git.
+- Qwen3/WebGPU é mantido apenas como opção de desenvolvimento local.
+- Quando usado em desenvolvimento, detectar suporte antes de inicializar WebGPU, tratar falhas e carregar pesos apenas sob pedido.
+- Validar origem, versão e integridade dos artefactos do modelo local.
 - Não colocar pesos de modelos no Git.
-- Não descarregar modelos silenciosamente.
 
 ## Fallback
 Quando o modelo não puder ser utilizado, mostrar claramente que o visitante está no modo de pesquisa/navegação determinística. Não representar este modo como uma conversa com IA.
@@ -89,10 +91,10 @@ Estes controlos reduzem a superfície de risco, mas não provam que o modelo nã
 - O modelo apenas devolve `actionProposal`; não recebe uma referência ao host nem ao DOM.
 - O dispatcher traduz propostas validadas para comandos internos tipados.
 - O host recebe apenas o comando validado e é a autoridade final.
-- Não existem URLs, rotas arbitrárias, JavaScript, HTML, acesso ao sistema de ficheiros, escrita no CMS ou eliminação de conteúdos.
+- Não existem URLs arbitrárias, JavaScript, HTML, acesso ao sistema de ficheiros, escrita no CMS ou eliminação de conteúdos. A única navegação automática é a rota fixa de projecto descrita acima.
 - O DemoPortfolioHostAdapter opera apenas num estado em memória, identificado como `demo`.
 
-O adaptador real do portefólio ainda não existe. A aplicação anfitriã terá de validar novamente cada comando e resolver apenas rotas/componentes actualmente autorizados. A aprovação do sandbox não prova a integração nem a segurança das rotas reais.
+A integração de navegação directa existe apenas para rotas de detalhe de projectos e não constitui um adaptador completo do portefólio. Os restantes comandos continuam no DemoPortfolioHostAdapter. A aprovação do sandbox não prova a integração nem a segurança das rotas reais.
 
 
 ## Controlos de memória e privacidade (Fase 7)
@@ -117,3 +119,14 @@ A prova Playwright de ausência de pedidos externos cobre o fluxo de memória au
 - A memória local distingue o erro `QUOTA_EXCEEDED` de falhas genéricas de transacção, apresentando uma instrução para libertar espaço ou apagar histórico.
 - A memória é armazenamento local do origin, sem cifragem própria da aplicação. O acesso ao perfil local do browser pode permitir inspeccionar IndexedDB; não guardar segredos ou dados pessoais desnecessários.
 - A Fase 7 não adiciona pedidos HTTP, telemetria ou sincronização ao módulo de memória.
+
+
+## Gemini Cloud (2026-11)
+
+- A chave `GEMINI_API_KEY` é lida exclusivamente pela função `/api/assistant` no servidor Vercel.
+- A função não regista prompts, respostas ou histórico em bases de dados. A limitação por IP em memória é best-effort por instância e não substitui um rate limiter distribuído.
+- A API aceita apenas pedidos same-origin, valida pergunta/histórico com Zod, aplica limites de tamanho e rejeita métodos diferentes de GET/POST.
+- O contexto de factos é construído no servidor a partir de registos publicados e verificados. Guardrails editoriais são enviados como restrições, nunca como factos.
+- A resposta Gemini é validada pelo Agent Core; citações têm de pertencer ao contexto recuperado e comandos têm de corresponder a schemas e slugs allowlisted.
+- O uso de um tier pago impede que prompts e respostas sejam usados para melhoria de produtos Google, mas não equivale por defeito a zero data retention; verificar os termos e opções de retenção em vigor.
+- As conversas não devem incluir segredos, moradas privadas, contactos privados ou outra informação sensível.

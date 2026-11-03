@@ -14,7 +14,7 @@ A interface do KUTUZOV JARVIS passa de uma página de conversa para um desktop d
 
 ## Fronteiras preservadas
 
-A alteração é de apresentação e composição. Mantém os componentes existentes ConversationWorkspace, MemoryPrivacyPanel e ActionEnginePanel. Não altera runtime WebLLM, modelo, Knowledge Engine, Agent Core, Action Registry, persistência local ou integração com o portefólio oficial.
+A primeira revisão foi de apresentação e composição, preservando ConversationWorkspace, MemoryPrivacyPanel e ActionEnginePanel. A revisão posterior Gemini acrescenta uma camada server-side e altera a orquestração do Agent Core, mantendo a Knowledge Base, os schemas do Action Registry e a separação do portefólio oficial.
 
 O núcleo visual representa a identidade do assistente; não afirma estado real de inferência. O estado do modelo continua a ser comunicado pelo componente de conversa.
 
@@ -32,3 +32,12 @@ A interface foi simplificada para o visitante: títulos e controlos em portuguê
 ## Percepção de velocidade
 
 Para perguntas sem intenção de navegação, o prompt já não inclui o catálogo completo de acções autorizadas. O schema só é incluído quando a pergunta pede explicitamente uma acção. O limite de geração foi reduzido de 420 para 256 tokens e o estilo de resposta passou a privilegiar 1 a 3 frases. Não se alterou o modelo, a localização da inferência ou a política de privacidade. O desempenho real continua dependente do hardware e deverá ser medido em dispositivos físicos.
+
+
+## Migração Gemini e comportamento de produção
+
+A interface de produção consulta `GET /api/assistant`. Quando o segredo existe, activa Gemini 3.8 Flash e esconde o botão de descarregar o Qwen3. Sem segredo, mantém pesquisa determinística e não pede ao visitante para instalar pesos.
+
+Em desenvolvimento local, o Qwen3 continua disponível como fallback de engenharia. A chave Gemini nunca é enviada ao browser. A função Vercel faz a chamada à API, reutiliza o Agent Core e valida a resposta antes de a mostrar.
+
+Um pedido explícito para abrir um projecto pode navegar directamente para o URL fixo do caso de estudo oficial, apenas quando o slug está no allowlist e o nome do projecto aparece no texto/contexto recente. Os restantes comandos continuam com confirmação.

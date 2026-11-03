@@ -1,0 +1,210 @@
+import { AgentHistorySchema, AgentQuestionSchema } from "../src/agent/contracts";
+import type { AgentGenerationRequest, AgentModelPort } from "../src/agent/model-port";
+import { runAgentTurn } from "../src/agent/agent-core";
+
+interface ApiRequest {
+  method?: string;
+  body?: unknown;
+  headers: Record<string, string | string[] | undefined>;
+}
+
+interface ApiResponse {
+  setHeader(name: string, value: string): void;
+  status(code: number): ApiResponse;
+  json(value: unknown): void;
+}
+
+interface GeminiPart {
+  text?: string;
+}
+
+interface GeminiGenerateResponse {
+  candidates?: Array<{
+    content?: { parts?: GeminiPart[] };
+    finishReason?: string;
+  }>;
+}
+
+const MODEL = process.env["GEMINI_MODEL"]?.trim() || "gemini-3.8-flash";
+const RATE_WINDOW_MS = 60_000;
+const RATE_LIMIT_PER_WINDOW = 18;
+const MAX_REQUEST_BYTES = 8_000;
+const requestCounts = new Map<string, { count: number; resetAt: number }>();
+
+export const config = { maxDuration: 30 };
+
+function headerValue(value: string | string[] | undefined): string {
+  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
+}
+
+function getClientIp(headers: ApiRequest["headers"]): string {
+  const forwarded = headerValue(headers["x-forwarded-for"]);
+  return forwarded.split(",")[0]?.trim().slice(0, 64) || "unknown";
+}
+
+function isSameOrigin(request: ApiRequest): boolean {
+  const origin = headerValue(request.headers.origin);
+  if (!origin) return true;
+  const host = headerValue(request.headers.host);
+  if (!host) return false;
+  try {
+    return new URL(origin).host.toLowerCase() === host.toLowerCase();
+  } catch {
+    return false;
+  }
+}
+
+function consumeRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const current = requestCounts.get(ip);
+  if (!current || current.resetAt <= now) {
+    requestCounts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return true;
+  }
+  if (current.count >= RATE_LIMIT_PER_WINDOW) return false;
+  current.count += 1;
+  if (requestCounts.size > 2_000) {
+    for (const [key, value] of requestCounts) {
+      if (value.resetAt <= now) requestCounts.delete(key);
+    }
+  }
+  return true;
+}
+
+function decodeBody(body: unknown): unknown {
+  if (typeof body !== "string") return body;
+  if (body.length > MAX_REQUEST_BYTES) return null;
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function createGeminiModel(apiKey: string): AgentModelPort {
+  return {
+    async generate(request: AgentGenerationRequest) {
+      if (request.signal.aborted) return { cancelled: true };
+
+      let response: Response;
+      try {
+        response = await fetch(
+          "https://generativelanguage.googleapis.com/v1beta/models/" +
+            encodeURIComponent(MODEL) + ":generateContent",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: request.systemPrompt }],
+              },
+              contents: [{
+                role: "user",
+                parts: [{ text: request.userPrompt }],
+              }],
+              generationConfig: {
+                temperature: request.temperature,
+                topP: request.topP,
+                maxOutputTokens: Math.min(request.maxTokens, 800),
+                responseMimeType: "application/json",
+              },
+            }),
+            signal: request.signal,
+          },
+        );
+      } catch (error) {
+        if (request.signal.aborted) return { cancelled: true };
+        throw new Error("Gemini não conseguiu receber o pedido.", { cause: error });
+      }
+
+      if (!response.ok) {
+        throw new Error("Gemini devolveu HTTP " + response.status + ".");
+      }
+
+      const payload = await response.json() as GeminiGenerateResponse;
+      const text = payload.candidates?.[0]?.content?.parts
+        ?.map((part) => typeof part.text === "string" ? part.text : "")
+        .join("")
+        .trim();
+
+      if (!text) {
+        throw new Error("Gemini não devolveu conteúdo de texto.");
+      }
+
+      request.onToken(text);
+      return { cancelled: false };
+    },
+  };
+}
+
+export default async function handler(request: ApiRequest, response: ApiResponse): Promise<void> {
+  response.setHeader("Cache-Control", "no-store, max-age=0");
+  response.setHeader("Vary", "Origin");
+
+  if (request.method === "GET") {
+    response.status(200).json({
+      available: Boolean(process.env["GEMINI_API_KEY"]),
+      provider: "gemini",
+      model: MODEL,
+    });
+    return;
+  }
+
+  if (request.method !== "POST") {
+    response.setHeader("Allow", "GET, POST");
+    response.status(405).json({ message: "Método não permitido." });
+    return;
+  }
+
+  if (!isSameOrigin(request)) {
+    response.status(403).json({ message: "Origem não autorizada." });
+    return;
+  }
+
+  const apiKey = process.env["GEMINI_API_KEY"];
+  if (!apiKey) {
+    response.status(503).json({ message: "A IA remota ainda não está configurada." });
+    return;
+  }
+
+  const contentLength = Number(headerValue(request.headers["content-length"]));
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    response.status(413).json({ message: "O pedido excede o limite permitido." });
+    return;
+  }
+
+  if (!consumeRateLimit(getClientIp(request.headers))) {
+    response.status(429).json({ message: "O JARVIS está a receber muitos pedidos. Tente novamente dentro de instantes." });
+    return;
+  }
+
+  const decoded = decodeBody(request.body);
+  const shape = typeof decoded === "object" && decoded !== null
+    ? decoded as Record<string, unknown>
+    : null;
+
+  if (!shape || typeof shape["question"] !== "string") {
+    response.status(400).json({ message: "Pedido inválido." });
+    return;
+  }
+
+  const question = AgentQuestionSchema.safeParse(shape["question"]);
+  const history = AgentHistorySchema.safeParse(shape["history"] ?? []);
+  if (!question.success || !history.success || Object.keys(shape).some((key) => !["question", "history"].includes(key))) {
+    response.status(400).json({ message: "A pergunta ou o histórico não respeitam os limites definidos." });
+    return;
+  }
+
+  try {
+    const result = await runAgentTurn(question.data, {
+      model: createGeminiModel(apiKey),
+      history: history.data,
+    });
+    response.status(200).json(result);
+  } catch {
+    response.status(502).json({ message: "O JARVIS não conseguiu concluir a resposta. Tente novamente." });
+  }
+}

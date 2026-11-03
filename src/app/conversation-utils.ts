@@ -71,6 +71,30 @@ function openProjectProposal(slug: string): PortfolioActionProposal | null {
   return parsed.success ? parsed.data : null;
 }
 
+export function resolveAutomaticProjectUrl(
+  proposal: PortfolioActionProposal | null | undefined,
+  intentText: string,
+): string | null {
+  const parsed = PortfolioActionSchema.safeParse(proposal);
+  if (!parsed.success || parsed.data.action !== "OPEN_PROJECT") return null;
+  const slug = parsed.data.parameters.slug;
+  const intentRecords = searchKnowledge(intentText, {
+    limit: 12,
+    minScore: 1,
+    kinds: ["project"],
+  });
+  const normalizedIntent = normalize(intentText);
+  const projectWasMentioned = intentRecords.some((result) => {
+    if (result.record.visibility !== "public_fact" || result.record.metadata["slug"] !== slug) {
+      return false;
+    }
+    const identifyingTerms = slug.split("-").filter((term) => term.length > 2 && term !== "que" && term !== "uma");
+    return identifyingTerms.some((term) => normalizedIntent.includes(term));
+  });
+  if (!projectWasMentioned) return null;
+  return new URL("/work/" + encodeURIComponent(slug), "https://www.edmundokutuzov.art").toString();
+}
+
 export function resolveDeterministicAction(
   question: string,
 ): PortfolioActionProposal | null {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDeterministicFallback,
+  resolveAutomaticProjectUrl,
   resolveDeterministicAction,
 } from "./conversation-utils";
 
@@ -11,6 +12,21 @@ describe("deterministic conversation fallback", () => {
       action: "SHOW_PROJECTS",
       parameters: {},
     });
+  });
+
+  it("opens only an allowlisted public project route automatically", () => {
+    expect(resolveAutomaticProjectUrl({
+      action: "OPEN_PROJECT",
+      parameters: { slug: "diga-yes" },
+    }, "Quero ver o projecto Diga YES")).toBe("https://www.edmundokutuzov.art/work/diga-yes");
+    expect(resolveAutomaticProjectUrl({
+      action: "SHOW_PROJECTS",
+      parameters: {},
+    }, "Quero ver os projectos")).toBeNull();
+    expect(resolveAutomaticProjectUrl({
+      action: "OPEN_PROJECT",
+      parameters: { slug: "../../admin" },
+    } as never, "Quero abrir o projecto Diga YES")).toBeNull();
   });
 
   it("maps a recognised discipline to the allowlisted project filter", () => {

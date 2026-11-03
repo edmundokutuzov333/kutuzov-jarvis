@@ -103,7 +103,7 @@ export function buildKnowledgeContext(
   options: KnowledgeContextOptions = {},
 ): KnowledgeContext {
   const maxCharacters = Math.max(500, options.maxCharacters ?? DEFAULT_CONTEXT_MAX_CHARACTERS);
-  const maxRecords = Math.max(1, Math.min(options.maxRecords ?? DEFAULT_CONTEXT_MAX_RECORDS, 12));
+  const maxRecords = Math.max(1, Math.min(options.maxRecords ?? DEFAULT_CONTEXT_MAX_RECORDS, 80));
   const candidates = results.slice(0, maxRecords).map((result) => result.record);
   const selected: KnowledgeEntry[] = [];
   let truncated = results.length > candidates.length;

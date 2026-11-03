@@ -14,6 +14,7 @@ import {
 } from "./response";
 import { buildKnowledgeContext } from "../knowledge/context";
 import { searchKnowledge } from "../knowledge/search";
+import { KNOWLEDGE_CATALOG } from "../knowledge/catalog";
 
 export type AgentCoreErrorCode =
   | "INVALID_INPUT"
@@ -91,10 +92,19 @@ function normalizeQuestionTokens(question: string): string[] {
     .filter(Boolean);
 }
 
+function isBroadProfileQuestion(question: string): boolean {
+  const normalized = normalizeQuestionTokens(question).join(" ");
+  return /\b(tudo sobre mim|tudo sobre kutuzov|tudo o que sabes|tudo que sabes|tudo o que sabe|tudo que sabe|apresente tudo|perfil completo|percurso completo|all about me|everything about me|complete profile|who am i)\b/.test(normalized);
+}
+
 function buildRetrievalQuery(
   question: string,
   history: readonly AgentHistoryMessage[],
 ): string {
+  if (isBroadProfileQuestion(question)) {
+    return "Edmundo Kutuzov perfil identidade experiência carreira projectos clientes marcas serviços competências disciplinas princípios processo métricas";
+  }
+
   const tokens = normalizeQuestionTokens(question);
   const meaningful = tokens.filter(
     (token) => token.length > 1 && !QUESTION_STOP_WORDS.has(token),
@@ -122,7 +132,9 @@ function isExplicitActionRequest(question: string): boolean {
     .toLocaleLowerCase("en");
   const hasActionVerb = /\b(mostra|mostrar|abre|abrir|ver|vai|navega|filtra|repor|reiniciar|show|open|view|display|navigate|go|take)\b/.test(normalized);
   const hasKnownTarget = /\b(projectos|projetos|projects|project|portefolio|portfolio|clientes|clients|marcas|brands|experiencia|experience|carreira|servicos|services|about|sobre|contacto|contact|interface)\b/.test(normalized);
-  return hasActionVerb && hasKnownTarget;
+  const knownProject = ["diga yes", "diga-yes", "jogue venca repita", "jogue vença repita", "datas que ligam", "somos uma"]
+    .some((name) => normalized.includes(name));
+  return hasActionVerb && (hasKnownTarget || knownProject);
 }
 
 function makeAbstention(constraintIds: readonly string[]): ValidatedAgentResponse {
@@ -210,22 +222,29 @@ export async function runAgentTurn(
 ): Promise<AgentTurnResult> {
   const input = validateInput(rawQuestion, options.history ?? []);
 
+  const broadProfile = isBroadProfileQuestion(input.question);
   const retrievalQuery = buildRetrievalQuery(input.question, input.history);
-  const rawResults = searchKnowledge(retrievalQuery, {
-    limit: 12,
-    minScore: 1,
-  });
+  const rawResults = broadProfile
+    ? KNOWLEDGE_CATALOG.records.map((record) => ({
+        record,
+        score: 1,
+        matchedTerms: ["broad-profile"],
+      }))
+    : searchKnowledge(retrievalQuery, {
+        limit: 12,
+        minScore: 1,
+      });
   const focusedTerms = normalizeQuestionTokens(retrievalQuery)
     .filter((term) => term.length > 1 && !QUESTION_STOP_WORDS.has(term));
-  const results = focusedTerms.length === 0
+  const results = broadProfile || focusedTerms.length === 0
     ? rawResults
     : rawResults.filter((result) =>
         result.matchedTerms.some((term) => focusedTerms.includes(term)),
       );
-  const context = buildKnowledgeContext(retrievalQuery, results, {
-    maxCharacters: 3_200,
-    maxRecords: 6,
-  });
+  const context = buildKnowledgeContext(retrievalQuery, results, broadProfile
+    ? { maxCharacters: 28_000, maxRecords: 80 }
+    : { maxCharacters: 4_500, maxRecords: 8 },
+  );
   const retrieval = summarizeRetrieval(context, results.length);
 
   if (options.signal?.aborted) {
@@ -277,7 +296,7 @@ export async function runAgentTurn(
       generation = await options.model.generate({
         systemPrompt: AGENT_SYSTEM_PROMPT,
         userPrompt,
-        maxTokens: 256,
+        maxTokens: broadProfile ? 720 : actionRequested ? 180 : 256,
         temperature: 0.15,
         topP: 0.82,
         signal: controller.signal,

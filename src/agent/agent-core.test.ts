@@ -42,6 +42,23 @@ describe("Agent Core orchestration", () => {
     expect(model.lastRequest?.userPrompt).not.toContain("actionProposalContract");
   });
 
+  it("retrieves a broad, category-spanning snapshot when asked for everything about Kutuzov", async () => {
+    const model = new TestModel(JSON.stringify({
+      status: "answered",
+      answer: "Edmundo Kutuzov é Art Director e trabalha em várias disciplinas.",
+      citationIds: ["identity.public-profile"],
+      followUpQuestion: null,
+    }));
+    const result = await runAgentTurn("Quero saber tudo sobre mim", { model });
+    expect(result.state).toBe("completed");
+    if (result.state !== "completed") return;
+    expect(result.retrieval.publicFacts).toBeGreaterThan(30);
+    expect(model.lastRequest?.maxTokens).toBe(720);
+    expect(model.lastRequest?.userPrompt).toContain("experience.webmasters");
+    expect(model.lastRequest?.userPrompt).toContain("project.diga-yes");
+    expect(model.lastRequest?.userPrompt).toContain("client.toyota");
+  });
+
   it("does not mistake the person name alone for evidence about an unrelated topic", async () => {
     const model = new TestModel("{}");
     const result = await runAgentTurn("Que prémio Pulitzer ganhou Kutuzov?", { model });
@@ -148,6 +165,25 @@ describe("Agent Core orchestration", () => {
     expect(result.response.references).toEqual([]);
     expect(result.modelUsed).toBe(true);
     expect(model.calls).toBe(1);
+  });
+
+  it("recognises a natural request to open a named published project", async () => {
+    const model = new TestModel(JSON.stringify({
+      status: "action_proposed",
+      answer: "Vou abrir o projecto Diga YES.",
+      citationIds: [],
+      followUpQuestion: null,
+      actionProposal: { action: "OPEN_PROJECT", parameters: { slug: "diga-yes" } },
+    }));
+
+    const result = await runAgentTurn("Quero ver o projecto Diga YES", { model });
+    expect(result.state).toBe("completed");
+    if (result.state !== "completed") return;
+    expect(result.response.actionProposal).toEqual({
+      action: "OPEN_PROJECT",
+      parameters: { slug: "diga-yes" },
+    });
+    expect(model.lastRequest?.userPrompt).toContain("openProjectSlugs");
   });
 
   it("returns proposals without dispatching them to a host adapter", async () => {

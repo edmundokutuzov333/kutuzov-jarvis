@@ -101,7 +101,7 @@ export function MemoryPrivacyPanel({
           <p className="eyebrow">PRIVACIDADE</p>
           <h2 id="memory-panel-title">A sua memória, sob o seu controlo.</h2>
           <p className="memory-panel__description">
-            As conversas ficam apenas neste dispositivo. Não são enviadas nem sincronizadas.
+            O histórico guardado fica neste browser. Quando a IA está activa, a pergunta, o contexto recente e os factos públicos relevantes são enviados à Gemini API para gerar a resposta.
           </p>
         </div>
         <span className="memory-panel__badge">LOCAL</span>
@@ -111,7 +111,7 @@ export function MemoryPrivacyPanel({
         <div>
           <strong>Guardar conversas</strong>
           <p>
-            As conversas ficam guardadas apenas neste browser. Pode apagar tudo quando quiser.
+            O histórico que escolher guardar permanece neste browser. As perguntas enviadas à IA são processadas pelo serviço Gemini. Pode apagar o histórico local quando quiser.
           </p>
         </div>
         <label className="memory-toggle">

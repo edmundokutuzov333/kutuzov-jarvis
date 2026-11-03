@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import { AgentCoreError, runAgentTurn } from "../agent/agent-core";
+import { askGeminiAssistant, getGeminiAvailability } from "../agent/gemini-api";
 import type { AgentReference } from "../agent/response";
 import type { AgentModelPort } from "../agent/model-port";
 import {
@@ -33,12 +34,12 @@ import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
 import { inspectWebGpu, type WebGpuSupport } from "../platform/webgpu";
 import { LocalInferenceRuntime, LocalRuntimeError } from "../runtime/local-runtime";
-import { buildDeterministicFallback } from "./conversation-utils";
+import { buildDeterministicFallback, resolveAutomaticProjectUrl } from "./conversation-utils";
 
 interface ChatMessage extends ConversationMessage {
   references?: AgentReference[];
   projects?: KnowledgeEntry[];
-  mode?: "local-ai" | "deterministic";
+  mode?: "gemini" | "local-ai" | "deterministic";
   actionProposal?: PortfolioActionProposal | null;
   actionResult?: string | undefined;
   actionStatus?: "executed" | "rejected" | "declined" | undefined;
@@ -110,6 +111,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const preferenceRef = useRef(historyEnabled);
   const [modelStatus, setModelStatus] = useState<ModelStatus>("checking");
+  const [geminiAvailable, setGeminiAvailable] = useState(false);
   const [capability, setCapability] = useState<WebGpuSupport | null>(null);
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadMessage, setLoadMessage] = useState("A verificar a compatibilidade deste browser.");
@@ -127,19 +129,43 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
   useEffect(() => {
     let active = true;
-    void inspectWebGpu().then((result) => {
+
+    async function detectAssistant() {
+      const remote = await getGeminiAvailability();
       if (!active) return;
-      setCapability(result);
-      setModelStatus(result.status === "available" ? "idle" : "unsupported");
+      if (remote.available) {
+        setGeminiAvailable(true);
+        setModelStatus("ready");
+        setLoadMessage("JARVIS está pronto. Não é necessário descarregar um modelo.");
+        return;
+      }
+
+      if (import.meta.env.PROD) {
+        setModelStatus("unsupported");
+        setLoadMessage("O serviço de IA ainda não está configurado.");
+        return;
+      }
+
+      const local = await inspectWebGpu();
+      if (!active) return;
+      setCapability(local);
+      setModelStatus(local.status === "available" ? "idle" : "unsupported");
       setLoadMessage(
-        result.status === "available"
-          ? "Pronto para activar o assistente."
-          : "A pesquisa local está disponível neste dispositivo.",
+        local.status === "available"
+          ? "Modo local de desenvolvimento disponível."
+          : "A pesquisa local continua disponível neste dispositivo.",
       );
-    }).catch((reason: unknown) => {
+    }
+
+    void detectAssistant().catch((reason: unknown) => {
       if (!active) return;
-      setModelStatus("unsupported");
-      setLoadMessage(describeError(reason));
+      if (import.meta.env.PROD) {
+        setModelStatus("unsupported");
+        setLoadMessage("O serviço de IA está temporariamente indisponível.");
+      } else {
+        setModelStatus("unsupported");
+        setLoadMessage(describeError(reason));
+      }
     });
 
     return () => {
@@ -333,8 +359,46 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     }
 
     let assistantMessage: ChatMessage;
+    let autoOpenProjectUrl: string | null = null;
 
-    if (runtimeRef.current?.isReady) {
+    if (geminiAvailable) {
+      try {
+        const result = await askGeminiAssistant(question, history, controller.signal);
+        if (result.state === "cancelled") {
+          assistantMessage = makeMessage("assistant", "A geração foi interrompida. Pode voltar a enviar a pergunta.");
+        } else {
+          const projects = searchKnowledge(question, {
+            limit: 3,
+            minScore: 2,
+            kinds: ["project"],
+          }).map((item) => item.record);
+          const navigationContext = [question, ...history.filter((item) => item.role === "user").map((item) => item.content)].join(" ");
+          autoOpenProjectUrl = resolveAutomaticProjectUrl(result.response.actionProposal, navigationContext);
+          assistantMessage = {
+            ...makeMessage("assistant", result.response.answer),
+            references: result.response.references,
+            projects,
+            mode: "gemini",
+            actionProposal: autoOpenProjectUrl ? null : result.response.actionProposal,
+          };
+        }
+      } catch {
+        if (controller.signal.aborted) {
+          assistantMessage = makeMessage("assistant", "A geração foi interrompida. Pode voltar a enviar a pergunta.");
+        } else {
+          const fallback = buildDeterministicFallback(question);
+          assistantMessage = {
+            ...makeMessage("assistant", fallback.answer),
+            references: fallback.references,
+            projects: fallback.projects,
+            actionProposal: fallback.actionProposal,
+            mode: "deterministic",
+          };
+          setNotice("A IA não conseguiu responder neste momento. Apresento a informação local disponível.");
+          setError("");
+        }
+      }
+    } else if (runtimeRef.current?.isReady) {
       const modelPort: AgentModelPort = {
         generate: (request) => runtimeRef.current!.generate(
           request.userPrompt,
@@ -419,6 +483,9 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
     abortRef.current = null;
     setBusy(false);
+    if (autoOpenProjectUrl && !controller.signal.aborted) {
+      window.location.assign(autoOpenProjectUrl);
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -433,8 +500,10 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     }
   }
 
-  const modelLabel = modelStatus === "ready"
-    ? "IA LOCAL ACTIVA"
+  const modelLabel = geminiAvailable
+    ? "GEMINI 3.8 ACTIVA"
+    : modelStatus === "ready"
+      ? "IA LOCAL ACTIVA"
     : modelStatus === "loading"
       ? "A CARREGAR MODELO"
       : modelStatus === "checking"
@@ -463,9 +532,11 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
             <span>{modelLabel}</span>
           </div>
           <p className="rail-copy">
-            {modelStatus === "ready"
-              ? "O Qwen3 está carregado e a inferência ocorre localmente."
-              : "Sem descarregar qualquer modelo, a pesquisa determinística continua disponível."}
+            {geminiAvailable
+              ? "As respostas são geradas com Gemini. Não é necessário descarregar um modelo."
+              : modelStatus === "ready"
+                ? "O Qwen3 está carregado e a inferência ocorre localmente."
+                : "A pesquisa publicada continua disponível sem descarregar modelos."}
           </p>
         </div>
 
@@ -473,16 +544,16 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
         <div className="rail-section">
           <p className="rail-label">MODO DE OPERAÇÃO</p>
-          <div className="rail-fact"><span>Inference</span><strong>Browser-first</strong></div>
-          <div className="rail-fact"><span>AI API</span><strong>Zero</strong></div>
-          <div className="rail-fact"><span>Knowledge</span><strong>Local snapshot</strong></div>
+          <div className="rail-fact"><span>Inference</span><strong>{geminiAvailable ? "Gemini Cloud" : "Browser-first"}</strong></div>
+          <div className="rail-fact"><span>AI API</span><strong>{geminiAvailable ? "Gemini" : "Local"}</strong></div>
+          <div className="rail-fact"><span>Knowledge</span><strong>Public snapshot</strong></div>
           <div className="rail-fact"><span>Memory</span><strong>{historyEnabled ? "Opt-in active" : "Not stored"}</strong></div>
         </div>
 
         <div className="rail-bottom">
-          <span className="rail-label">PORTFOLIO CONNECTION</span>
-          <strong>NOT CONNECTED</strong>
-          <p>As acções disponíveis nesta versão usam exclusivamente um adaptador sandbox.</p>
+          <span className="rail-label">PORTFOLIO NAVIGATION</span>
+          <strong>PROJECTS LINKED</strong>
+          <p>Pedidos explícitos para abrir projectos encaminham para a página oficial.</p>
         </div>
       </aside>
 
@@ -534,30 +605,52 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           </div>
         ) : null}
 
-        <div className="model-control" aria-label="Estado do modelo local">
-          <div className="model-control__identity">
-            <span className={modelStatus === "ready" ? "model-indicator is-ready" : "model-indicator"} />
-            <div>
-              <strong>JARVIS <span>IA LOCAL</span></strong>
-              <small>As respostas são processadas neste dispositivo.</small>
+        {geminiAvailable ? (
+          <div className="model-control" aria-label="Estado do assistente Gemini">
+            <div className="model-control__identity">
+              <span className="model-indicator is-ready" />
+              <div>
+                <strong>JARVIS <span>GEMINI 3.8 FLASH</span></strong>
+                <small>Respostas na nuvem. Sem descarregar modelos no browser.</small>
+              </div>
+            </div>
+            <span className="toolbar-note">ONLINE</span>
+          </div>
+        ) : import.meta.env.PROD ? (
+          <div className="model-control" aria-label="Estado do assistente remoto">
+            <div className="model-control__identity">
+              <span className="model-indicator" />
+              <div>
+                <strong>JARVIS <span>IA REMOTA</span></strong>
+                <small>O serviço Gemini ainda não está configurado.</small>
+              </div>
+            </div>
+            <span className="toolbar-note">A AGUARDAR</span>
+          </div>
+        ) : (
+          <div className="model-control" aria-label="Estado do modelo local de desenvolvimento">
+            <div className="model-control__identity">
+              <span className={modelStatus === "ready" ? "model-indicator is-ready" : "model-indicator"} />
+              <div>
+                <strong>Qwen3 <span>DESENVOLVIMENTO LOCAL</span></strong>
+                <small>Este modo existe apenas para testes locais.</small>
+              </div>
+            </div>
+            <div className="model-control__actions">
+              {modelStatus === "checking" ? (
+                <span className="toolbar-note">A verificar WebGPU...</span>
+              ) : modelStatus === "loading" ? (
+                <button className="button button--quiet" type="button" onClick={cancelModelLoad}>Cancelar</button>
+              ) : modelStatus === "ready" ? (
+                <button className="button button--quiet" type="button" onClick={() => void releaseModel()}>Desactivar IA</button>
+              ) : capability?.status === "available" ? (
+                <button className="button button--primary" type="button" onClick={() => void loadModel()}>Activar IA local</button>
+              ) : (
+                <span className="toolbar-note">Pesquisa disponível</span>
+              )}
             </div>
           </div>
-          <div className="model-control__actions">
-            {modelStatus === "checking" ? (
-              <span className="toolbar-note">A verificar WebGPU...</span>
-            ) : modelStatus === "loading" ? (
-              <button className="button button--quiet" type="button" onClick={cancelModelLoad}>Cancelar</button>
-            ) : modelStatus === "ready" ? (
-              <button className="button button--quiet" type="button" onClick={() => void releaseModel()}>Desactivar IA</button>
-            ) : capability?.status === "available" ? (
-              <button className="button button--primary" type="button" onClick={() => void loadModel()}>
-                Activar IA local
-              </button>
-            ) : (
-              <span className="toolbar-note">Pesquisa disponível</span>
-            )}
-          </div>
-        </div>
+        )}
 
         {modelStatus === "loading" ? (
           <div className="model-progress" aria-live="polite">
@@ -570,9 +663,11 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
         {modelStatus === "unsupported" ? (
           <p className="mode-explanation" role="status">
-            {capability?.status === "unavailable"
-              ? capability.message
-              : "Este browser não disponibiliza WebGPU. Está activo o modo de pesquisa determinística, sem inferência artificial."}
+            {import.meta.env.PROD
+              ? "A IA remota ainda não está configurada. A pesquisa de informação publicada continua disponível."
+              : capability?.status === "unavailable"
+                ? capability.message
+                : "Este browser não disponibiliza WebGPU. Está activo o modo de pesquisa determinística, sem inferência artificial."}
           </p>
         ) : null}
 
@@ -608,6 +703,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
                         minute: "2-digit",
                       }).format(message.createdAt)}
                     </time>
+                    {message.mode === "gemini" ? <span className="message-mode">GEMINI IA</span> : null}
                     {message.mode === "local-ai" ? <span className="message-mode">IA LOCAL</span> : null}
                     {message.mode === "deterministic" ? <span className="message-mode">PESQUISA LOCAL</span> : null}
                   </div>
@@ -756,8 +852,8 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         </form>
 
         <div className="chat-footnote">
-          <span>JARVIS NÃO É KUTUZOV. É UM ASSISTENTE DIGITAL.</span>
-          <span>{modelStatus === "ready" ? "INFERÊNCIA LOCAL ACTIVA" : "MODO DETERMINÍSTICO / SEM MODELO"}</span>
+          <span>{geminiAvailable ? "PERGUNTAS PROCESSADAS PELA GEMINI API." : "ASSISTENTE DIGITAL DE KUTUZOV."}</span>
+          <span>{geminiAvailable ? "IA GEMINI ACTIVA" : "PESQUISA DISPONÍVEL"}</span>
         </div>
       </div>
     </section>

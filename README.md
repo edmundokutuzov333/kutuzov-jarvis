@@ -2,26 +2,26 @@
 
 Assistente digital especializado no percurso, identidade profissional, experiência, projectos, competências, serviços e filosofia criativa de Edmundo Kutuzov.
 
-**Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
+**Arquitectura pública:** Gemini 3.8 Flash através de uma função privada no Vercel, com RAG sobre a Knowledge Base pública. O Qwen3/WebGPU fica como modo local de desenvolvimento, não exigido aos visitantes.
 
-> **Estado actual:** Fases 0 a 8 implementadas e aprovadas por CI. A Fase 9 passou os gates automatizados de avaliação, segurança do browser, bundle e quatro ambientes Playwright. A aceitação integral continua pendente de inferência Qwen3 em GPU física, revisão de respostas reais em português e medições no dispositivo. A Fase 10 não foi iniciada.
+> **Estado actual:** os gates automatizados da Fase 9 passaram. A integração Gemini está preparada no código, mas a activação de produção aguarda GEMINI_API_KEY, validação de respostas reais em português e medição de latência/custos. Qwen3/WebGPU fica opcional no desenvolvimento local. A Fase 10 não foi iniciada.
 
 ## Objectivo
 
-O JARVIS é um assistente digital especializado numa única pessoa. Deve ajudar os visitantes a conhecer o percurso profissional de Kutuzov, explorar projectos, compreender competências e serviços e, numa fase posterior, navegar pelo portefólio através de acções autorizadas.
+O JARVIS é um assistente digital especializado no percurso profissional de Kutuzov. Ajuda os visitantes a explorar identidade, experiência, projectos, marcas, competências e serviços, e pode abrir directamente casos de estudo publicados quando o visitante pede essa navegação.
 
 Não é um chatbot genérico, um sistema multiagente ou um clone do ChatGPT.
 
 ## Princípios obrigatórios
 
-- **Local-first:** a inferência ocorre no dispositivo do visitante através de WebGPU, quando suportado.
-- **Zero AI API:** não enviar perguntas ou respostas para OpenAI, Gemini, Claude ou qualquer serviço remoto de inferência.
-- **Sem backend de IA:** não depender de servidor dedicado, computador de Kutuzov ou base de dados remota.
-- **Carregamento explícito:** runtime e pesos do modelo só são carregados após acção explícita do visitante.
+- **Sem downloads em produção:** os visitantes usam Gemini 3.8 Flash através de uma função server-side no Vercel.
+- **Chave protegida:** GEMINI_API_KEY existe apenas no ambiente do servidor; nunca usar VITE_ nem colocar a chave no Git.
+- **RAG factual:** Gemini recebe a pergunta, contexto recente limitado e factos públicos recuperados pela Knowledge Base.
+- **Desenvolvimento local:** Qwen3/WebGPU permanece como opção de desenvolvimento, não como requisito para o visitante.
 - **Factualidade:** a Knowledge Base é a fonte de verdade; cada facto tem origem e estado editorial.
-- **Acções limitadas:** o modelo apenas propõe; a aplicação valida schemas, exige confirmação e encaminha comandos para um host autorizado.
-- **Privacidade:** histórico futuro permanece local e tem de ser eliminável.
-- **Fallback honesto:** sem modelo, disponibilizar pesquisa determinística, sem fingir que existe inferência.
+- **Acções limitadas:** o modelo propõe acções tipadas; a aplicação valida schemas. A abertura explícita de um projecto publicado pode navegar para a rota fixa depois de validar o slug e a menção do projecto; as restantes acções exigem confirmação.
+- **Privacidade:** o histórico persistente opcional fica no browser e pode ser eliminado. Quando Gemini está activo, a pergunta, contexto recente e factos recuperados são enviados à Google para inferência.
+- **Fallback honesto:** sem GEMINI_API_KEY ou perante falha da API, disponibilizar pesquisa determinística, sem fingir que existe inferência.
 - **Independência:** o portefólio oficial não é alterado durante as fases independentes.
 
 ## Repositórios
@@ -47,7 +47,7 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 9. Testes e optimização final | Gates automatizados aprovados; aceitação física/modelo pendente |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 9 passou os gates automatizados, mas continua bloqueada para aceitação integral até existir um ensaio físico de WebGPU/Qwen3, validação humana das respostas e medições reais. A Fase 10 permanece por iniciar.
+A validação automatizada não substitui ensaios físicos. A inferência Gemini em produção não exige que o visitante descarregue Qwen3. O teste físico de WebGPU/Qwen3 mantém-se pendente apenas para o modo local de desenvolvimento. A Fase 10 permanece por iniciar.
 
 ## Fase 1: investigação e auditoria
 
@@ -356,3 +356,33 @@ docs/
 ## Licença
 
 Ainda não foi adicionado um ficheiro LICENSE. A licença do código próprio permanece pendente de decisão explícita do proprietário.
+
+
+## Inteligência Gemini
+
+A experiência pública usa a Gemini API através de uma função server-side em `/api/assistant`. O visitante não descarrega os pesos do Qwen3. A função lê a chave apenas de `GEMINI_API_KEY`, executa retrieval sobre a Knowledge Base pública e valida a resposta pelo Agent Core.
+
+- Modelo predefinido: `gemini-3.8-flash`.
+- Variáveis de servidor: `GEMINI_API_KEY` obrigatória; `GEMINI_MODEL` opcional.
+- Não usar prefixo `VITE_` para a chave e nunca guardar a chave no Git.
+- Apenas o tier pago com billing activo é permitido para dados do projecto.
+- O histórico continua opcional e local. Quando Gemini está activo, a pergunta e o contexto recente seguem para a API.
+- Sem chave configurada em produção, o JARVIS não descarrega um modelo no browser; mantém apenas a pesquisa determinística.
+- Pedidos explícitos para abrir um projecto podem abrir automaticamente apenas uma rota fixa `https://www.edmundokutuzov.art/work/{slug}`, após validação do slug publicado.
+
+A Knowledge Base é uma fonte RAG, não fine-tuning. Factos ainda não publicados ou editorialmente pendentes continuam a ser apresentados como desconhecidos.
+
+
+## Inteligência Gemini e Knowledge Base
+
+A experiência de produção utiliza `gemini-3.8-flash` através de `/api/assistant`, uma função server-side no Vercel. A chave é lida apenas de `GEMINI_API_KEY`; não é incluída nos ficheiros públicos do site.
+
+A base é RAG, não fine-tuning. O Agent Core recupera factos publicados do snapshot, envia apenas esse contexto à Gemini e valida a resposta, referências e propostas de acção. Perguntas de perfil completo podem consultar o catálogo público inteiro; perguntas normais usam contexto limitado para reduzir custo e latência.
+
+O histórico persistente continua opcional e local ao browser. Quando Gemini está activa, a pergunta actual e até seis mensagens recentes podem ser enviadas à API. Não introduzir segredos, moradas privadas ou contactos privados.
+
+Pedidos explícitos para abrir um projecto publicado podem abrir automaticamente apenas a rota fixa `https://www.edmundokutuzov.art/work/{slug}`, depois de validar que o slug corresponde ao projecto mencionado. As restantes acções continuam a exigir confirmação.
+
+**Activação pendente:** adicionar `GEMINI_API_KEY` ao projecto Vercel como variável Sensitive/Encrypted para Production e fazer redeploy. O endpoint não revela se a chave está presente, apenas devolve um booleano de disponibilidade. Sem a chave, a produção mantém a pesquisa determinística e não solicita ao visitante que descarregue Qwen3.
+
+Consultar [docs/GEMINI-INTEGRATION.md](docs/GEMINI-INTEGRATION.md).
