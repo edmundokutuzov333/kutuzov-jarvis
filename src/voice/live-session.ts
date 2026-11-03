@@ -158,7 +158,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
           for (const part of audioParts) {
             const pcm = pcm16ToFloat32(fromBase64(part.inlineData?.data || ""));
             const buffer = context.createBuffer(1, pcm.length, 24_000);
-            buffer.copyToChannel(pcm, 0);
+            const channel = buffer.getChannelData(0);\n            for (let index = 0; index < pcm.length; index += 1) channel[index] = pcm[index] ?? 0;
             const node = context.createBufferSource();
             node.buffer = buffer;
             node.connect(context.destination);

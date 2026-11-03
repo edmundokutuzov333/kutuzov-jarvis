@@ -1,4 +1,13 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
+interface VercelRequest {
+  method?: string;
+  headers: Record<string, string | string[] | undefined>;
+  socket?: { remoteAddress?: string };
+}
+interface VercelResponse {
+  setHeader(name: string, value: string): void;
+  status(code: number): VercelResponse;
+  json(value: unknown): void;
+}
 
 declare const process: { env: Record<string, string | undefined> };
 
