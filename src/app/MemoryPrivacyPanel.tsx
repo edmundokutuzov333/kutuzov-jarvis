@@ -41,12 +41,17 @@ export function MemoryPrivacyPanel() {
   }, [store]);
 
   async function changePreference(enabled: boolean) {
+    const previousStatus = status;
+    setStatus((currentStatus) => currentStatus
+      ? { ...currentStatus, historyEnabled: enabled }
+      : currentStatus);
     setBusy(true);
     setError("");
     try {
       await store.setHistoryEnabled(enabled);
       await refreshStatus();
     } catch (reason) {
+      setStatus(previousStatus);
       setError(describeError(reason));
     } finally {
       setBusy(false);
