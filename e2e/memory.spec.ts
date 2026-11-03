@@ -1,34 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-async function openSession(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: "Abrir Sessão" }).click();
-  await expect(page.getByRole("region", { name: "Uma conversa nova, sempre." })).toBeVisible();
-}
-
-test("starts every visitor with an ephemeral session", async ({ page }) => {
+test("starts with a clean visitor conversation and no session menu", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Abrir Sessão" })).toBeVisible();
-  await openSession(page);
-  await expect(page.getByText("Sem histórico persistente")).toBeVisible();
-  await expect(page.getByText("Voz por consentimento")).toBeVisible();
-  await expect(page.getByText("Conhecimento público")).toBeVisible();
-
-  const disabledWrite = await page.evaluate(async () => {
-    const { LocalConversationStore } = await import("/src/memory/local-store.ts");
-    try {
-      await new LocalConversationStore().createSession();
-      return "unexpected-success";
-    } catch (error) {
-      return error instanceof Error && "code" in error ? String(error.code) : "unknown-error";
-    }
-  });
-  expect(disabledWrite).toBe("MEMORY_DISABLED");
+  await expect(page.getByRole("heading", { name: "Olá. Sou o Kutuzov." })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Falar com Edmundo" })).toBeVisible();
+  await expect(page.getByText("Sessão")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Abrir Sessão" })).toHaveCount(0);
+  await expect(page.locator('[data-window-id="session"]')).toHaveCount(0);
 });
 
-test("keeps the ephemeral-session panel usable on mobile", async ({ page }) => {
+test("keeps the voice console central and usable on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await openSession(page);
-  await expect(page.getByText("Estado: sessão limpa")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Abrir Conversa" })).toBeVisible();
+  const voice = page.getByRole("checkbox", { name: "Falar com Edmundo" });
+  await expect(voice).toBeVisible();
+  await expect(page.getByText("CLIQUE PARA FALAR COMIGO")).toBeVisible();
+  await expect(page.locator(".voice-console__bars i")).toHaveCount(15);
 });
