@@ -206,3 +206,22 @@ Este documento separa decisões aceites de hipóteses e selecções provisórias
 **Decisão:** adicionar `actionProposal` ao JSON de saída do Agent Core e um estado `action_proposed` para pedidos explícitos de navegação sem resposta factual.  
 **Motivo:** permitir propostas tipadas sem function calling autónomo nem permissões de execução no modelo.  
 **Consequência:** o schema valida a proposta, mas a execução continua exclusivamente no Action Engine após confirmação.
+
+
+## ADR-0036: IndexedDB local e consentimento explícito para histórico
+**Estado:** Aceite e implementado  
+**Decisão:** persistir sessões e mensagens exclusivamente em IndexedDB, com gravação desactivada por defeito e opção explícita para activar/desactivar.  
+**Motivo:** cumprir browser-first, evitar qualquer dependência de backend e dar controlo claro ao visitante.  
+**Consequência:** sem consentimento não são criadas sessões nem escritas mensagens. Desactivar suspende novas gravações, mas não apaga os dados já guardados; a eliminação é uma acção separada e destrutiva.
+
+## ADR-0037: limites e separação do contexto conversacional
+**Estado:** Aceite e implementado  
+**Decisão:** limitar a persistência a 20 sessões, 100 mensagens por sessão e 90 dias; limitar o contexto entregue ao Agent Core a seis mensagens de até 500 caracteres.  
+**Motivo:** evitar crescimento ilimitado do armazenamento e respeitar o orçamento de contexto já estabelecido na Fase 5.  
+**Consequência:** o histórico persistido serve apenas para continuidade da conversa. Não altera nem complementa a Knowledge Base e não pode ser usado como fonte de citações.
+
+## ADR-0038: eliminação via deleteDatabase e sem preferência residual
+**Estado:** Aceite e implementado  
+**Decisão:** o comando de eliminação fecha a ligação IndexedDB e elimina a base de dados completa, incluindo a preferência de consentimento.  
+**Motivo:** uma eliminação do histórico não deve deixar mensagens, sessões ou preferências relacionadas que aparentem ter sido removidas mas continuem armazenadas.  
+**Consequência:** depois da eliminação, o estado regressa a memória desactivada e sem registos. As ligações de outras janelas têm de fechar em `versionchange`; uma janela que bloqueie a eliminação produz erro explícito.
