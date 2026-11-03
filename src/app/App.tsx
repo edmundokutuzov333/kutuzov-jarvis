@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { FloatingWindow } from "./FloatingWindow";
 import { SessionInfoPanel } from "./SessionInfoPanel";
+import { NoiseAtmosphere } from "./NoiseAtmosphere";
 
 type WindowId = "conversation" | "session";
 const labels: Record<WindowId, string> = { conversation: "Conversa", session: "Sessão" };
@@ -22,6 +23,7 @@ export function App() {
   return (
     <main className="jarvis-desktop" data-testid="jarvis-desktop">
       <div className="desktop-atmosphere" aria-hidden="true" />
+      <NoiseAtmosphere patternSize={256} patternRefreshInterval={2} patternAlpha={18} />
       <header className="desktop-topbar">
         <a className="desktop-brand" href="/" aria-label="Edmundo Kutuzov, início">
           <span className="desktop-brand__mark">EK<span>.</span></span>
