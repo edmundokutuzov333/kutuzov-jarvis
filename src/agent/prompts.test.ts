@@ -6,8 +6,10 @@ import { AGENT_PROMPT_VERSION } from "./contracts";
 import { AGENT_SYSTEM_PROMPT, buildAgentUserPrompt } from "./prompts";
 
 describe("versioned Agent Core prompts", () => {
-  it("keeps the system prompt focused on identity, evidence, abstention and trust boundaries", () => {
-    expect(AGENT_SYSTEM_PROMPT).toContain("Não és Edmundo Kutuzov");
+  it("keeps the system prompt in Kutuzov's first-person voice without inventing personal facts", () => {
+    expect(AGENT_SYSTEM_PROMPT).toContain("sempre na primeira pessoa");
+    expect(AGENT_SYSTEM_PROMPT).toContain("representação conversacional");
+    expect(AGENT_SYSTEM_PROMPT).not.toContain("Não és Edmundo Kutuzov");
     expect(AGENT_SYSTEM_PROMPT).toContain("única fonte autorizada");
     expect(AGENT_SYSTEM_PROMPT).toContain("Nunca cites IDs de restrições editoriais");
     expect(AGENT_SYSTEM_PROMPT).toContain("JSON válido");
