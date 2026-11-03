@@ -53,7 +53,7 @@ async function getLiveToken(signal?: AbortSignal): Promise<LiveTokenPayload> {
   const response = await fetch("/api/live-token", {
     method: "POST",
     headers: { Accept: "application/json" },
-    signal,
+    ...(signal ? { signal } : {}),
   });
   const payload = await response.json() as Partial<LiveTokenPayload> & { message?: string };
   if (!response.ok || typeof payload.token !== "string" || typeof payload.model !== "string") {

@@ -66,11 +66,6 @@ function makeMessage(role: ConversationMessage["role"], content: string): ChatMe
   });
 }
 
-function getProjectMetadata(record: KnowledgeEntry, key: string): string {
-  const value = record.metadata[key];
-  return typeof value === "string" || typeof value === "number" ? String(value) : "";
-}
-
 interface ConversationWorkspaceProps {
   historyEnabled: boolean;
   onBusyChange?: (busy: boolean) => void;
@@ -267,7 +262,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
             minScore: 2,
             kinds: ["project"],
           }).map((item) => item.record);
-          const navigationContext = [question, ...history.filter((item) => item.role === "user").map((item) => item.content)].join(" ");          assistantMessage = {
             ...makeMessage("assistant", result.response.answer),
             projects,
           };
