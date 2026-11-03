@@ -64,28 +64,39 @@ export interface LocalMemoryStatus {
 
 export class LocalConversationStore {
   private databasePromise: Promise<IDBDatabase> | null = null;
-  private readonly factory: IDBFactory;
+  private readonly factory: IDBFactory | undefined;
   private readonly databaseName: string;
 
   constructor(options: { factory?: IDBFactory; databaseName?: string } = {}) {
-    const factory = options.factory ?? globalThis.indexedDB;
+    this.factory = options.factory ?? globalThis.indexedDB;
+    this.databaseName = options.databaseName ?? MEMORY_DATABASE_NAME;
+  }
+
+  private getFactory(): IDBFactory {
+    const factory = this.factory ?? globalThis.indexedDB;
     if (!factory) {
       throw new MemoryStoreError(
         "INDEXEDDB_UNAVAILABLE",
         "Este browser não disponibiliza IndexedDB. O histórico local não pode ser guardado.",
       );
     }
-    this.factory = factory;
-    this.databaseName = options.databaseName ?? MEMORY_DATABASE_NAME;
+    return factory;
   }
 
   private openDatabase(): Promise<IDBDatabase> {
     if (this.databasePromise) return this.databasePromise;
 
+    let factory: IDBFactory;
+    try {
+      factory = this.getFactory();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+
     const promise = new Promise<IDBDatabase>((resolve, reject) => {
       let request: IDBOpenDBRequest;
       try {
-        request = this.factory.open(this.databaseName, MEMORY_DATABASE_VERSION);
+        request = factory.open(this.databaseName, MEMORY_DATABASE_VERSION);
       } catch (error) {
         reject(new MemoryStoreError(
           "DATABASE_OPEN_FAILED",
@@ -469,10 +480,11 @@ export class LocalConversationStore {
     database.close();
     this.databasePromise = null;
 
+    const factory = this.getFactory();
     await new Promise<void>((resolve, reject) => {
       let request: IDBOpenDBRequest;
       try {
-        request = this.factory.deleteDatabase(this.databaseName);
+        request = factory.deleteDatabase(this.databaseName);
       } catch (error) {
         reject(new MemoryStoreError(
           "DATABASE_OPEN_FAILED",
