@@ -45,6 +45,23 @@ describe("deterministic conversation fallback", () => {
     expect(result.references.some((reference) => reference.recordId === "identity.public-profile")).toBe(true);
   });
 
+  it("does not retrieve a public profile just because a private-data question names Kutuzov", () => {
+    const result = buildDeterministicFallback(
+      "Qual é a morada residencial privada e o número de telefone pessoal de Kutuzov?",
+    );
+    expect(result.references).toHaveLength(0);
+    expect(result.projects).toHaveLength(0);
+    expect(result.answer).toContain("não encontrei informação");
+  });
+
+  it("allows a direct identity question to retrieve only public identity records", () => {
+    const result = buildDeterministicFallback("Quem é Kutuzov?");
+    expect(result.references.length).toBeGreaterThan(0);
+    expect(result.references.every((reference) =>
+      reference.recordId.startsWith("identity."),
+    )).toBe(true);
+  });
+
   it("does not claim an AI response when there is no evidence", () => {
     const result = buildDeterministicFallback("Qual é o nome do animal de estimação privado?");
     expect(result.references).toHaveLength(0);

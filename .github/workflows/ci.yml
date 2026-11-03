@@ -13,7 +13,7 @@ jobs:
   validate:
     name: Typecheck, lint, unit, build and browser smoke test
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,8 +44,11 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Initial bundle performance budget
+        run: npm run check:bundle
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium chrome msedge webkit
 
       - name: Browser smoke test
         run: npm run test:e2e

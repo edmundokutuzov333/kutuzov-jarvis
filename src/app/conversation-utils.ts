@@ -26,6 +26,43 @@ function hasAny(value: string, terms: readonly string[]): boolean {
   return terms.some((term) => value.includes(term));
 }
 
+const QUERY_STOP_WORDS = new Set([
+  "a", "as", "ao", "aos", "da", "das", "de", "do", "dos", "e", "em",
+  "é", "foi", "for", "me", "na", "nas", "no", "nos", "o", "os", "ou",
+  "para", "por", "que", "qual", "quais", "quem", "se", "sua", "suas",
+  "um", "uma", "uns", "umas", "the", "this", "that", "to", "was",
+  "what", "which", "who", "with", "and", "is", "are", "of", "in", "on",
+  "his", "her", "their", "at", "by", "please", "tell", "about",
+  "kutuzov", "edmundo",
+]);
+
+function isDirectIdentityQuestion(question: string): boolean {
+  const value = normalize(question);
+  return /\b(quem e kutuzov|who is kutuzov|who was kutuzov|sobre kutuzov|perfil de kutuzov|tell me about kutuzov)\b/.test(value);
+}
+
+function relevantKnowledgeResults(
+  question: string,
+  limit: number,
+): ReturnType<typeof searchKnowledge> {
+  const results = searchKnowledge(question, { limit, minScore: 1 });
+  if (isDirectIdentityQuestion(question)) {
+    return results.filter((result) =>
+      result.record.kind === "identity" &&
+      result.record.visibility === "public_fact",
+    );
+  }
+
+  const meaningfulTerms = normalize(question)
+    .split(" ")
+    .filter((term) => term.length > 1 && !QUERY_STOP_WORDS.has(term));
+
+  if (meaningfulTerms.length === 0) return [];
+  return results.filter((result) =>
+    result.matchedTerms.some((term) => meaningfulTerms.includes(term)),
+  );
+}
+
 function openProjectProposal(slug: string): PortfolioActionProposal | null {
   const parsed = PortfolioActionSchema.safeParse({
     action: "OPEN_PROJECT",
@@ -112,7 +149,7 @@ export function buildDeterministicFallback(
     };
   }
 
-  const results = searchKnowledge(question, { limit: 5, minScore: 1.5 });
+  const results = relevantKnowledgeResults(question, 12).slice(0, 5);
   const publicResults = results.filter(
     (result) => result.record.visibility === "public_fact",
   );
@@ -122,11 +159,10 @@ export function buildDeterministicFallback(
     path: record.source.path,
     capturedAt: record.source.capturedAt,
   }));
-  const projects = searchKnowledge(question, {
-    limit: 3,
-    minScore: 2,
-    kinds: ["project"],
-  }).map((result) => result.record);
+  const projects = publicResults
+    .filter((result) => result.record.kind === "project")
+    .slice(0, 3)
+    .map((result) => result.record);
 
   const excerpts: string[] = [];
   let remainingCharacters = 1_200;

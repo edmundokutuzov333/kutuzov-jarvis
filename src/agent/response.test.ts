@@ -40,6 +40,31 @@ describe("structured Agent Core response validation", () => {
     }), knowledge)).toThrow();
   });
 
+  it("rejects unknown navigation actions and arbitrary parameters", () => {
+    const emptyKnowledge = buildKnowledgeContext("Abre Contact", []);
+    const invalidOutputs = [
+      {
+        ...valid,
+        status: "action_proposed",
+        citationIds: [],
+        actionProposal: { action: "DELETE_DATABASE", parameters: {} },
+      },
+      {
+        ...valid,
+        status: "action_proposed",
+        citationIds: [],
+        actionProposal: {
+          action: "OPEN_PROJECT",
+          parameters: { slug: "diga-yes", url: "javascript:alert(1)" },
+        },
+      },
+      { ...valid, unexpectedInstruction: "execute arbitrary code" },
+    ];
+    for (const output of invalidOutputs) {
+      expect(() => parseAgentModelOutput(JSON.stringify(output), emptyKnowledge)).toThrow();
+    }
+  });
+
   it("returns an action proposal as an inert suggestion", () => {
     const emptyKnowledge = buildKnowledgeContext("Abre Contact", []);
     const output = {
