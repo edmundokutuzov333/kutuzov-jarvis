@@ -1,7 +1,7 @@
 # Fase 7: Memória local e privacidade
 
 **Data:** 3 de Novembro de 2026  
-**Estado:** implementação submetida aos quality gates. A integração com a conversa final pertence à Fase 8.
+**Estado:** implementada e validada por GitHub Actions. [Workflow run 41556771231](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41556771231). A integração com a conversa final pertence à Fase 8.
 
 ## Objectivo
 
@@ -37,6 +37,7 @@ Não se guardam nomes, emails, IPs, identificadores de conta ou títulos derivad
 - As ligações respondem a `versionchange` e fecham para não bloquear a migração ou a eliminação.
 - Se IndexedDB não existir, a aplicação não falha durante o render. O painel apresenta o erro e a memória permanece indisponível.
 - Falhas de abertura, transacção, bloqueio e validação são comunicadas com códigos tipados.
+- Erros de quota do browser são reconhecidos como `QUOTA_EXCEEDED` e apresentados com uma mensagem específica para libertar espaço ou eliminar conversas.
 
 ### Limites de armazenamento
 
@@ -61,7 +62,7 @@ A interface conversacional ainda não existe. A leitura e a persistência estão
 
 ## Privacidade e rede
 
-O módulo de memória não importa clientes HTTP, não faz chamadas `fetch`, não envia eventos e não implementa sincronização. O armazenamento usa exclusivamente IndexedDB do próprio origin.
+O módulo de memória não importa clientes HTTP, não faz chamadas `fetch`, não envia eventos e não implementa sincronização. O armazenamento usa exclusivamente IndexedDB do próprio origin. Os dados não são cifrados por uma camada própria da aplicação: ficam protegidos pelo isolamento de origem e pelo perfil do browser/sistema operativo. Uma pessoa com acesso ao perfil local do browser pode inspeccionar os registos; não se devem guardar segredos nem dados pessoais desnecessários.
 
 O teste Playwright observa os pedidos de rede durante operações de memória e reprova qualquer pedido para outra origem. Isto comprova o fluxo automatizado de armazenamento no Chromium, mas não é uma auditoria de rede de todos os futuros fluxos da aplicação. A ligação efectiva entre mensagens, modelo local e memória será testada novamente na Fase 8/9.
 
@@ -76,10 +77,14 @@ Esta é uma superfície de controlo da Fase 7, não a interface de chat final.
 ## Testes
 
 - Testes unitários para janela de contexto, truncagem, limites de armazenamento e cálculo da retenção.
-- Playwright Chromium para consentimento inicialmente desligado, rejeição de escrita sem autorização, criação de sessão, persistência de mensagens em IndexedDB, recuperação após reload, limite de seis mensagens no contexto, eliminação da base de dados e ausência de pedidos externos durante o fluxo.
-- Playwright em viewport móvel para verificar a disponibilidade dos controlos.
+- Playwright Chromium: 7/7 testes aprovados no workflow da Fase 7. O fluxo de memória verifica consentimento inicialmente desligado, escrita bloqueada sem autorização, persistência em IndexedDB, recuperação após reload, limite de 100 mensagens, janela de contexto de seis mensagens, desactivação sem apagar dados, eliminação completa, limite de 20 sessões, viewport móvel, fallback sem IndexedDB e ausência de pedidos para outras origens durante o fluxo testado.
+- Vitest: 14 ficheiros, 90/90 testes aprovados.
+- TypeScript, ESLint e build de produção: aprovados.
+- Nenhuma dependência nova e lockfile preservado.
 
-Os resultados finais são registados após o workflow GitHub Actions desta implementação.
+Workflow: [JARVIS quality gates, run 41556771231](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41556771231).
+
+Build da aplicação: JavaScript inicial 350.84 KB (106.54 KB gzip); CSS 14.97 KB (3.47 KB gzip); runtime WebLLM 5,954.23 KB (2,148.18 KB gzip); worker 6,121.59 KB. O aviso de chunk acima de 500 KB continua associado ao runtime WebLLM, que permanece separado do carregamento inicial. Não foram medidos tempo de inferência, pico de VRAM ou desempenho físico da GPU nesta fase.
 
 ## Estado dos critérios
 
@@ -93,9 +98,9 @@ Os resultados finais são registados após o workflow GitHub Actions desta imple
 | Contexto limitado a 6 mensagens / 500 caracteres | Implementado |
 | Eliminação efectiva da base de dados local | Implementado |
 | Tratamento de IndexedDB indisponível ou bloqueado | Implementado |
-| Testes unitários | Implementados; CI a confirmar |
-| Testes reais no Chromium | Implementados; CI a confirmar |
-| Ausência de pedidos externos no fluxo de memória testado | CI a confirmar |
+| Testes unitários | Aprovados: 14 ficheiros, 90/90 |
+| Testes reais no Chromium | Aprovados: 7/7 |
+| Ausência de pedidos externos no fluxo de memória testado | Aprovada no fluxo automatizado Chromium |
 | Integração com UI de conversação final | Pendente, Fase 8 |
 | Prova física WebGPU e avaliação de respostas | Pendente, Fases 3/9 |
 
