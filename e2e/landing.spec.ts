@@ -81,7 +81,7 @@ test("keeps the visitor interface focused on conversation and live voice", async
   await page.goto("/");
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
   await expect(page.locator('[data-window-id="session"]')).toHaveCount(0);
-  await expect(page.getByRole("checkbox", { name: "Falar com Kutuzov" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Falar com Kutuzov" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
   await expect(page.getByText(/SANDBOX|DEMO HOST|REGISTERED ACTIONS|FONTES CONSULTADAS|Sessão/)).toHaveCount(0);
 });
