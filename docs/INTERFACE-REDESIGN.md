@@ -1,43 +1,39 @@
-# Interface redesign
+# Interface pública
 
-## Direcção visual
+## Princípio
 
-A interface do KUTUZOV JARVIS passa de uma página de conversa para um desktop de inteligência pessoal. A direcção combina a linguagem visual do portefólio edmundokutuzov.art com uma metáfora de centro de comando inspirada nas referências visuais fornecidas.
+A experiência pública deve parecer uma conversa directa com Edmundo Kutuzov. A interface não apresenta o visitante a ferramentas internas, fornecedores de IA, mecanismos de pesquisa, estados de GPU ou painéis de demonstração.
 
-- Base azul-noite e superfícies azul-ardósia.
-- Azul eléctrico e azul-gelo como acentos, com texto bone/off-white.
-- Tipografia display geométrica, sans e mono técnica, seguindo os tokens do portefólio.
-- Núcleo central animado construído em CSS, sem canvas/WebGL adicional.
-- Janelas flutuantes para conversa, memória e command center.
-- Barra superior, rail de navegação e dock para trazer janelas para a frente ou reabri-las.
-- Arrastar janelas pelo cabeçalho com Pointer Events. Em ecrãs estreitos, as janelas passam a uma composição vertical utilizável.
+A linguagem usa primeira pessoa, com factos profissionais confirmados na Knowledge Base. O modelo não inventa experiências, sentimentos, opiniões ou acontecimentos pessoais. Quando a informação não está confirmada, responde naturalmente que não tem esse dado confirmado.
 
-## Fronteiras preservadas
+## Composição
 
-A primeira revisão foi de apresentação e composição, preservando ConversationWorkspace, MemoryPrivacyPanel e ActionEnginePanel. A revisão posterior Gemini acrescenta uma camada server-side e altera a orquestração do Agent Core, mantendo a Knowledge Base, os schemas do Action Registry e a separação do portefólio oficial.
+- Uma janela de conversa é a experiência principal e única janela aberta por defeito.
+- O núcleo energético permanece ao centro como elemento visual da identidade.
+- O cabeçalho apresenta apenas a marca pessoal de Edmundo Kutuzov.
+- O painel de privacidade é opcional e só abre quando o visitante o solicita.
+- O antigo painel público de comandos foi retirado. O Action Engine e o adaptador de demonstração permanecem no código interno e nos testes, mas não fazem parte da experiência do visitante.
+- As janelas continuam a poder ser movidas pelo cabeçalho em desktop. Em ecrãs estreitos, passam para uma composição vertical.
 
-O núcleo visual representa a identidade do assistente; não afirma estado real de inferência. O estado do modelo continua a ser comunicado pelo componente de conversa.
+## Conversa
 
-## Performance
+- O visitante vê uma saudação em primeira pessoa e três sugestões de conversa.
+- As mensagens aparecem com identificadores simples: “VOCÊ” e “KUTUZOV”.
+- Não se mostram nomes de fornecedores, rótulos técnicos, referências internas, caminhos de ficheiros, datas de snapshot ou instruções de sandbox.
+- A caixa de escrita usa a expressão “Escreva-me uma mensagem...”.
+- As respostas de fallback usam a mesma voz conversacional e distinguem informação confirmada de informação desconhecida.
+- Os projectos relacionados aparecem em cartões discretos. Cada cartão abre directamente a página oficial do projecto, usando apenas slugs publicados e permitidos.
 
-A nova camada visual não introduz dependências. O bundle inicial CSS passa a ter um limite de 40 KiB raw / 10 KiB gzip para acomodar a nova composição, mantendo HTML e JavaScript com os limites anteriores. O runtime WebLLM continua fora do carregamento inicial.
+## Privacidade
 
+O histórico é opcional e fica guardado no dispositivo do visitante. O painel explica que as mensagens são processadas por um serviço externo para gerar respostas. O visitante pode activar ou desactivar a gravação e apagar as conversas guardadas. Não se mostra contagem de sessões, mensagens ou estados internos.
 
-## Refinamento visual 02
+## Arquitectura e segurança
 
-A segunda revisão removeu a letra central e passou o núcleo a uma esfera de energia abstracta com camadas de plasma, filamentos, partículas, pulsos e órbitas. O núcleo muda de intensidade e velocidade enquanto o assistente prepara uma resposta.
+A interface pública envia perguntas para o endpoint privado no Vercel. A chave do serviço permanece no servidor. Qwen3, WebLLM e WebGPU não são importados nem carregados pela experiência pública. Quando o serviço não está disponível, o site permite consultar informação pública confirmada através do fallback determinístico, sem fingir que houve geração por IA.
 
-A interface foi simplificada para o visitante: títulos e controlos em português, menos metadados técnicos, descrições curtas e maior hierarquia tipográfica. As janelas mantêm arrastamento por Pointer Events e estados de foco.
+A abertura automática de projectos só usa slugs publicados na allowlist e uma rota fixa do portefólio oficial. Nenhum URL gerado pelo modelo é aceite.
 
-## Percepção de velocidade
+## Performance e validação
 
-Para perguntas sem intenção de navegação, o prompt já não inclui o catálogo completo de acções autorizadas. O schema só é incluído quando a pergunta pede explicitamente uma acção. O limite de geração foi reduzido de 420 para 256 tokens e o estilo de resposta passou a privilegiar 1 a 3 frases. Não se alterou o modelo, a localização da inferência ou a política de privacidade. O desempenho real continua dependente do hardware e deverá ser medido em dispositivos físicos.
-
-
-## Migração Gemini e comportamento de produção
-
-A interface de produção consulta `GET /api/assistant`. Quando o segredo existe, activa Gemini 3.8 Flash e esconde o botão de descarregar o Qwen3. Sem segredo, mantém pesquisa determinística e não pede ao visitante para instalar pesos.
-
-Em desenvolvimento local, o Qwen3 continua disponível como fallback de engenharia. A chave Gemini nunca é enviada ao browser. A função Vercel faz a chamada à API, reutiliza o Agent Core e valida a resposta antes de a mostrar.
-
-Um pedido explícito para abrir um projecto pode navegar directamente para o URL fixo do caso de estudo oficial, apenas quando o slug está no allowlist e o nome do projecto aparece no texto/contexto recente. Os restantes comandos continuam com confirmação.
+A composição não introduz dependências. Os estilos dos painéis técnicos retirados foram eliminados da folha pública para manter o orçamento de CSS. Os testes Playwright cobrem a interface simples, a disponibilidade/fallback, a conversa com resposta Gemini simulada, a privacidade, a responsividade, a segurança do texto introduzido e o arrastamento das janelas.
