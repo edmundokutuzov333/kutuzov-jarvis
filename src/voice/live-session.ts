@@ -78,6 +78,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const nextAudioTimeRef = useRef(0);
+  const openedRef = useRef(false);
   const callbacksRef = useRef(callbacks);
   callbacksRef.current = callbacks;
 
@@ -133,6 +134,7 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
             outputAudioTranscription: {},
           },
         }));
+        openedRef.current = true;
         setState("listening");
       };
 
@@ -180,11 +182,19 @@ export function useLiveVoice(callbacks: VoiceCallbacks = {}): LiveVoiceControlle
         setState("error");
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (socketRef.current === socket) {
           socketRef.current = null;
-          setState("idle");
+          if (!openedRef.current) {
+            callbacksRef.current.onError?.(
+              event.reason || "Não consegui estabelecer a ligação de voz em tempo real.",
+            );
+            setState("error");
+          } else {
+            setState("idle");
+          }
         }
+        openedRef.current = false;
       };
 
       const source = context.createMediaStreamSource(stream);
