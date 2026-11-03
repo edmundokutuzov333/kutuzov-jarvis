@@ -133,8 +133,8 @@ type ParsedAnswer = {
 
 function isEnglishQuestion(question: string): boolean {
   const value = question.toLocaleLowerCase("en");
-  const englishMarkers = value.match(/\b(what|which|who|how|where|tell|about|services|projects|project|contact|experience|brands|skills|offer)\\b/g)?.length ?? 0;
-  const portugueseMarkers = value.match(/\b(qual|quais|quem|como|onde|conta|servicos|serviços|projectos|projetos|contacto|experiencia|experiência|marcas|competencias|competências)\\b/g)?.length ?? 0;
+  const englishMarkers = value.match(/\b(what|which|who|how|where|tell|about|services|projects|project|contact|experience|brands|skills|offer)\b/g)?.length ?? 0;
+  const portugueseMarkers = value.match(/\b(qual|quais|quem|como|onde|conta|servicos|serviços|projectos|projetos|contacto|experiencia|experiência|marcas|competencias|competências)\b/g)?.length ?? 0;
   return englishMarkers > portugueseMarkers;
 }
 
