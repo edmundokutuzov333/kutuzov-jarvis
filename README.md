@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0, 1 e 2 concluídas. Fases 3 e 4 implementadas e validadas por CI, mas a aceitação integrada depende de inferência física com WebGPU. Fase 5 implementada e validada por CI. Fase 6 implementada e validada por CI no ambiente independente, com adaptador sandbox. Fases 7 a 10 ainda não iniciadas.
+> **Estado actual:** Fases 0 a 6 implementadas e validadas por CI nos respectivos limites documentados. Fase 7 implementada e submetida aos quality gates; integração do histórico na interface conversacional continua pendente da Fase 8. Fases 8 a 10 ainda não iniciadas. A aceitação integrada do modelo continua dependente de inferência física com WebGPU.
 
 ## Objectivo
 
@@ -42,12 +42,12 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 4. Knowledge Engine | Implementada e validada por CI; avaliação integrada com modelo real pendente |
 | 5. Agent Core | Implementada e validada por CI; avaliação real com Qwen3 pendente |
 | 6. Action Engine | Implementada e validada por CI no sandbox; adaptador do portefólio real não implementado |
-| 7. Memória e privacidade | Não iniciada |
+| 7. Memória e privacidade | Implementada; validação CI desta revisão a confirmar; ligação à UI conversacional pendente |
 | 8. Interface conversacional | Não iniciada |
 | 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. Estes são critérios separados e continuam pendentes.
+A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 7 implementa persistência local e controlos de privacidade, mas a ligação ao ciclo conversacional só será feita na Fase 8. Estes critérios são separados e continuam pendentes.
 
 ## Fase 1: investigação e auditoria
 
@@ -174,6 +174,27 @@ A consola de demonstração apresenta sempre **SANDBOX / DEMO ONLY**. Cada botã
 
 Consultar [docs/PHASE-6.md](docs/PHASE-6.md), [src/actions/README.md](src/actions/README.md) e [docs/INTEGRATION-CONTRACT.md](docs/INTEGRATION-CONTRACT.md).
 
+
+## Fase 7: Memória e privacidade
+
+Implementado em `src/memory/`, sem dependências novas.
+
+- IndexedDB local, com stores separados para sessões, mensagens e consentimento.
+- Histórico desligado por defeito e activado apenas por escolha explícita do visitante.
+- Desactivar impede novas gravações, mas mantém os registos existentes até eliminação.
+- Título de sessão genérico, sem derivar conteúdo da conversa.
+- Limites: 20 sessões, 100 mensagens por sessão, até 2.000 mensagens no total.
+- Retenção de 90 dias, aplicada ao consultar o estado e ao criar sessões.
+- Mensagens validadas com os schemas de conversa existentes.
+- `getAgentHistory` limita o contexto às últimas 6 mensagens, com 500 caracteres por mensagem.
+- Eliminação fecha as ligações e remove a base de dados IndexedDB completa, incluindo a preferência.
+- Sem localStorage, backend, sincronização, telemetria ou chamadas HTTP no módulo de memória.
+- Painel de privacidade responsivo, com consentimento, contagem de dados e eliminação com confirmação.
+
+O serviço está disponível para a Fase 8, mas ainda não existe interface de chat. A integração do ciclo de conversa com `createSession`, `appendMessage` e `getAgentHistory` será feita nessa fase. Os testes de browser verificam IndexedDB real no Chromium, persistência após reload e eliminação. A CI desta implementação será indicada no relatório final da fase.
+
+Consultar [docs/PHASE-7.md](docs/PHASE-7.md).
+
 ## Quality gates
 
 Último workflow da Fase 6: [JARVIS quality gates, run 41554009167](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41554009167).
@@ -224,6 +245,7 @@ src/
 ├── agent/        # prompts, ciclo de conversação, modelo local e validação
 ├── runtime/      # WebLLM, Worker e ciclo de vida local
 ├── actions/      # registry, schemas, handlers e host adapter
+├── memory/       # IndexedDB, sessões, histórico e políticas de contexto
 └── platform/     # WebGPU e capacidades do browser
 docs/
 ├── PHASE-0.md
@@ -233,6 +255,7 @@ docs/
 ├── PHASE-4.md
 ├── PHASE-5.md
 ├── PHASE-6.md
+├── PHASE-7.md
 ├── ARCHITECTURE.md
 ├── DECISIONS.md
 ├── PORTFOLIO-DATA-AUDIT.md
@@ -252,7 +275,8 @@ docs/
 - A biografia e os papéis por projecto continuam editorialmente pendentes.
 - Não existe interface conversacional completa nem fluxo de confirmação de propostas geradas pelo modelo ligado ao utilizador.
 - O Action Engine só foi executado no adaptador sandbox. O adaptador real e a navegação do website não estão implementados.
-- Memória persistente, voz, optimização final e integração não estão implementadas.
+- A persistência e os controlos de memória local estão implementados. A ligação ao chat ainda não existe porque a interface conversacional pertence à Fase 8.
+- Voz, optimização final e integração não estão implementadas.
 - Não existe licença de software definida para o código próprio.
 
 ## Documentação
@@ -264,6 +288,7 @@ docs/
 - [Fase 4: Knowledge Engine](docs/PHASE-4.md)
 - [Fase 5: Agent Core](docs/PHASE-5.md)
 - [Fase 6: Action Engine](docs/PHASE-6.md)
+- [Fase 7: Memória e privacidade](docs/PHASE-7.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)
