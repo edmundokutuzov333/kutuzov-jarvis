@@ -8,7 +8,7 @@ interface VoicePillProps {
 }
 
 const labels: Record<VoiceState, string> = {
-  idle: "Falar com o JARVIS",
+  idle: "Falar com Kutuzov",
   listening: "A ouvir",
   processing: "A preparar",
   speaking: "A responder",
