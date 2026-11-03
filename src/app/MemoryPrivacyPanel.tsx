@@ -1,0 +1,151 @@
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  LocalConversationStore,
+  MemoryStoreError,
+  type LocalMemoryStatus,
+} from "../memory";
+
+function describeError(error: unknown): string {
+  if (error instanceof MemoryStoreError) return error.message;
+  if (error instanceof Error) return error.message;
+  return "Não foi possível aceder à memória local deste browser.";
+}
+
+export function MemoryPrivacyPanel() {
+  const store = useMemo(() => new LocalConversationStore(), []);
+  const [status, setStatus] = useState<LocalMemoryStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function refreshStatus() {
+    try {
+      const next = await store.getStatus();
+      setStatus(next);
+      setError("");
+    } catch (reason) {
+      setError(describeError(reason));
+    }
+  }
+
+  useEffect(() => {
+    let active = true;
+    void store.getStatus().then((next) => {
+      if (active) setStatus(next);
+    }).catch((reason: unknown) => {
+      if (active) setError(describeError(reason));
+    });
+    return () => {
+      active = false;
+    };
+  }, [store]);
+
+  async function changePreference(enabled: boolean) {
+    setBusy(true);
+    setError("");
+    try {
+      await store.setHistoryEnabled(enabled);
+      await refreshStatus();
+    } catch (reason) {
+      setError(describeError(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteHistory() {
+    const accepted = window.confirm(
+      "Apagar definitivamente todas as sessões e mensagens guardadas neste browser? Esta operação não pode ser anulada.",
+    );
+    if (!accepted) return;
+
+    setBusy(true);
+    setError("");
+    try {
+      await store.deleteAllData();
+      await refreshStatus();
+    } catch (reason) {
+      setError(describeError(reason));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="memory-panel" aria-labelledby="memory-panel-title">
+      <div className="memory-panel__heading">
+        <div>
+          <p className="eyebrow">MEMORY & PRIVACY / PHASE 07</p>
+          <h2 id="memory-panel-title">Your conversations stay yours.</h2>
+          <p className="memory-panel__description">
+            O histórico é opcional e fica apenas neste browser. Não é enviado para
+            servidores, não é sincronizado e nunca altera o conhecimento profissional do JARVIS.
+          </p>
+        </div>
+        <span className="memory-panel__badge">LOCAL / INDEXEDDB</span>
+      </div>
+
+      <div className="memory-panel__control">
+        <div>
+          <strong>Guardar histórico neste dispositivo</strong>
+          <p>
+            Desactivado por defeito. Ao activar, o JARVIS pode guardar sessões e
+            mensagens para recuperar o contexto em visitas seguintes.
+          </p>
+        </div>
+        <label className="memory-toggle">
+          <span className="sr-only">Guardar histórico neste dispositivo</span>
+          <input
+            aria-label="Guardar histórico neste dispositivo"
+            checked={status?.historyEnabled ?? false}
+            disabled={busy || status === null}
+            onChange={(event) => void changePreference(event.target.checked)}
+            type="checkbox"
+          />
+          <span aria-hidden="true" />
+        </label>
+      </div>
+
+      <div className="memory-panel__stats" aria-live="polite">
+        <div>
+          <span>SESSÕES LOCAIS</span>
+          <strong data-testid="memory-session-count">
+            {status?.sessionCount ?? "—"}
+          </strong>
+        </div>
+        <div>
+          <span>MENSAGENS LOCAIS</span>
+          <strong data-testid="memory-message-count">
+            {status?.messageCount ?? "—"}
+          </strong>
+        </div>
+        <div>
+          <span>ESTADO</span>
+          <strong data-testid="memory-state">
+            {status === null ? "A VERIFICAR" : status.historyEnabled ? "ACTIVO" : "DESACTIVADO"}
+          </strong>
+        </div>
+      </div>
+
+      <div className="memory-panel__footer">
+        <p>
+          Limites: 20 sessões, 100 mensagens por sessão e retenção de 90 dias.
+          O contexto enviado ao Agent Core usa apenas as últimas 6 mensagens,
+          com máximo de 500 caracteres por mensagem.
+        </p>
+        <button
+          className="button button--quiet"
+          data-testid="memory-delete-all"
+          disabled={busy || status === null || (status.sessionCount === 0 && status.messageCount === 0)}
+          onClick={() => void deleteHistory()}
+          type="button"
+        >
+          Apagar todo o histórico local
+        </button>
+      </div>
+
+      {error ? <p className="engine-panel__error" role="alert">{error}</p> : null}
+      {busy ? <p className="engine-panel__feedback" role="status">A actualizar as definições de memória local...</p> : null}
+    </section>
+  );
+}
