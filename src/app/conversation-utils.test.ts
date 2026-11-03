@@ -39,6 +39,12 @@ describe("deterministic conversation fallback", () => {
     expect(result.projects.length).toBeGreaterThan(0);
   });
 
+  it("shows retrieved public facts in the deterministic response", () => {
+    const result = buildDeterministicFallback("Quem é Kutuzov?");
+    expect(result.answer).toContain("Art Director");
+    expect(result.references.some((reference) => reference.recordId === "identity.public-profile")).toBe(true);
+  });
+
   it("does not claim an AI response when there is no evidence", () => {
     const result = buildDeterministicFallback("Qual é o nome do animal de estimação privado?");
     expect(result.references).toHaveLength(0);

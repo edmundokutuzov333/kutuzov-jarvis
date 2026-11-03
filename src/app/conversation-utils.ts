@@ -128,8 +128,21 @@ export function buildDeterministicFallback(
     kinds: ["project"],
   }).map((result) => result.record);
 
+  const excerpts: string[] = [];
+  let remainingCharacters = 1_200;
+  for (const { record } of publicResults.slice(0, 3)) {
+    if (remainingCharacters <= 0) break;
+    const title = record.title.slice(0, 110);
+    const content = record.content.slice(0, Math.min(420, remainingCharacters));
+    const excerpt = title + "\n" + content;
+    excerpts.push(excerpt);
+    remainingCharacters -= excerpt.length + 4;
+  }
+
   const answer = publicResults.length > 0
-    ? "A pesquisa local encontrou informação publicada relacionada com a pergunta. Os cartões e referências abaixo mostram exactamente os registos recuperados. Este modo não usa um modelo de inteligência artificial."
+    ? "A pesquisa local encontrou informação publicada relacionada com a pergunta. Estes são os registos recuperados:\n\n" +
+      excerpts.join("\n\n") +
+      "\n\nEste modo usa pesquisa local, não um modelo de inteligência artificial."
     : "Ainda não encontrei informação pública e verificada suficiente para responder. Sem o modelo local carregado, só posso fazer pesquisa determinística na base de conhecimento.";
 
   return {
