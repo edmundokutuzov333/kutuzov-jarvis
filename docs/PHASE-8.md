@@ -1,7 +1,7 @@
 # Fase 8: Interface conversacional
 
 **Data:** 3 de Novembro de 2026  
-**Estado inicial:** implementação entregue à CI; aprovação condicionada aos quality gates.
+**Estado final:** aprovada pelos quality gates automatizados. GitHub Actions run 41559742115 concluído com sucesso.
 
 ## Objectivo
 
@@ -15,7 +15,7 @@ A aplicação apresenta uma superfície de conversa como ponto central:
 - Perguntas sugeridas para orientar a primeira utilização.
 - Composer com limite de 2.000 caracteres, envio por Enter e quebra de linha por Shift + Enter.
 - Estado de verificação WebGPU, modelo não carregado, carregamento, progresso, disponibilidade, erro e libertação de recursos GPU.
-- A biblioteca WebLLM e o modelo Qwen3 só são importados/carregados depois de o visitante escolher explicitamente Carregar modelo local.
+- A biblioteca WebLLM e os pesos do modelo Qwen3 só são carregados depois de o visitante escolher explicitamente Carregar modelo local. A página não importa a biblioteca WebLLM nem descarrega pesos na entrada.
 - Cancelamento de carregamento e de geração.
 - Indicador de processamento enquanto o Agent Core prepara e valida uma resposta.
 - Rótulo explícito para distinguir inferência local de pesquisa determinística.
@@ -103,10 +103,29 @@ Não foram adicionadas dependências. O lockfile permanece sem alterações.
 | Memória IndexedDB ligada à conversa | Implementada |
 | Responsividade | Implementada |
 | Acessibilidade e movimento reduzido | Implementados |
-| Testes unitários novos | Implementados; execução CI pendente |
-| Testes end-to-end da conversa | Implementados; execução CI pendente |
+| Testes unitários | 15 ficheiros, 97/97 aprovados na CI |
+| Testes end-to-end | 10/10 aprovados no Playwright Chromium |
 | Validação em dispositivos reais e GPU física | Pendente, Fase 9 |
 | Integração no portefólio oficial | Fora do âmbito, Fase 10 |
+
+## Quality gates e desempenho medido
+
+Workflow GitHub Actions: [JARVIS quality gates, run 41559742115](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41559742115), conclusão success.
+
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 15 ficheiros, 97/97 testes aprovados.
+- Build de produção: aprovado.
+- Playwright Chromium: 10/10 testes aprovados.
+
+Tamanhos observados no build de produção:
+- HTML: 0.69 KB, gzip 0.41 KB.
+- JavaScript da aplicação: 404.62 KB, gzip 121.22 KB.
+- CSS: 22.28 KB, gzip 5.28 KB.
+- Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
+- Worker WebLLM: 6,121.59 KB.
+
+O runtime e o worker são chunks separados. Os testes E2E confirmam que o modelo e os artefactos remotos não são descarregados ao abrir a interface. Os tamanhos apresentados não incluem os pesos do modelo. Não são benchmarks de inferência nem de memória GPU.
 
 ## Limitações e riscos conhecidos
 

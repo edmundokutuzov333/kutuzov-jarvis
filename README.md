@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0 a 7 implementadas e validadas por CI nos limites documentados. A Fase 8 implementa a interface conversacional, a ligação ao Agent Core, o fallback determinístico, as referências, os cartões, as acções com confirmação e a memória local integrada. A aprovação depende dos quality gates da Fase 8. As provas com GPU física permanecem pendentes para a Fase 9.
+> **Estado actual:** Fases 0 a 8 implementadas e aprovadas pelos quality gates automatizados nos limites documentados. A Fase 8 entrega a interface conversacional ligada ao Agent Core, fallback determinístico com excertos factuais, referências, cartões, acções confirmadas e memória IndexedDB integrada. A validação de inferência em GPU física e a avaliação de qualidade do modelo permanecem pendentes para a Fase 9.
 
 ## Objectivo
 
@@ -42,12 +42,12 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 4. Knowledge Engine | Implementada e validada por CI; avaliação integrada com modelo real pendente |
 | 5. Agent Core | Implementada e validada por CI; avaliação real com Qwen3 pendente |
 | 6. Action Engine | Implementada e validada por CI no sandbox; adaptador do portefólio real não implementado |
-| 7. Memória e privacidade | Implementada e validada por CI; ligação à UI conversacional pendente da Fase 8 |
-| 8. Interface conversacional | Implementada; quality gates pendentes |
+| 7. Memória e privacidade | Implementada e validada por CI; integração com a conversa concluída na Fase 8 |
+| 8. Interface conversacional | Implementada e aprovada por CI |
 | 9. Testes e optimização final | Não iniciada |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 8 liga a interface ao Agent Core e à memória, mas a qualidade das respostas e a inferência física permanecem sujeitas a ensaios na Fase 9.
+A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 8 está aprovada no CI, mas a qualidade das respostas Qwen3, a inferência física e os benchmarks reais continuam sujeitos a ensaios na Fase 9.
 
 ## Fase 1: investigação e auditoria
 
@@ -191,7 +191,7 @@ Implementado em `src/memory/`, sem dependências novas.
 - Sem localStorage, backend, sincronização, telemetria ou chamadas HTTP no módulo de memória.
 - Painel de privacidade responsivo, com consentimento, contagem de dados e eliminação com confirmação.
 
-O serviço está disponível para a Fase 8, mas ainda não existe interface de chat. A integração do ciclo de conversa com `createSession`, `appendMessage` e `getAgentHistory` será feita nessa fase. Os testes de browser verificam IndexedDB real no Chromium, persistência após reload e eliminação. A CI desta implementação será indicada no relatório final da fase.
+A integração do ciclo de conversa com `createSession`, `appendMessage` e `getAgentHistory` foi concluída na Fase 8. O chat usa esta memória apenas após consentimento explícito. Os testes de browser verificam IndexedDB real no Chromium, persistência após reload, recuperação de conversas e eliminação.
 
 Consultar [docs/PHASE-7.md](docs/PHASE-7.md).
 
@@ -200,41 +200,44 @@ Consultar [docs/PHASE-7.md](docs/PHASE-7.md).
 A interface conversacional foi implementada em src/app/ConversationWorkspace.tsx, com a pesquisa determinística separada em src/app/conversation-utils.ts.
 
 - O chat é a superfície principal da aplicação.
-- O modelo WebLLM permanece sob pedido explícito; abrir a página não descarrega pesos nem importa o runtime de inferência.
+- A biblioteca WebLLM e os pesos do modelo só são carregados após o visitante pedir explicitamente. Abrir a página não importa a biblioteca WebLLM nem descarrega pesos.
 - O Agent Core está ligado ao runtime local através de AgentModelPort.
 - A resposta só é apresentada depois da validação estruturada e das referências.
-- Sem WebGPU ou sem modelo carregado, a aplicação usa pesquisa lexical determinística e assinala esse modo.
+- Sem WebGPU ou sem modelo carregado, a aplicação usa pesquisa lexical determinística, apresenta excertos dos registos públicos recuperados e assinala claramente esse modo.
 - Cartões de projecto apresentam informação do snapshot público e permitem preparar uma proposta de abertura.
 - As nove acções continuam no registry fechado e exigem confirmação explícita no adaptador sandbox.
 - O histórico opcional usa o IndexedDB da Fase 7 e pode ser recuperado depois de reload.
 - O painel mantém os controlos para consentimento e eliminação completa.
 - Não foram adicionadas dependências nem alterado o lockfile.
 
-A interface não está ligada às rotas do website oficial. O estado do adaptador sandbox não representa navegação real. A validação com GPU física e a qualidade semântica do Qwen3 permanecem pendentes.
+A interface não está ligada às rotas do website oficial. O estado do adaptador sandbox não representa navegação real. A validação com GPU física e a qualidade semântica do Qwen3 permanecem pendentes para a Fase 9.
 
 Consultar [docs/PHASE-8.md](docs/PHASE-8.md).
 
 ## Quality gates
 
-Último workflow da Fase 7: [JARVIS quality gates, run 41556771231](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41556771231).
+Último workflow da Fase 8: [JARVIS quality gates, run 41559742115](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41559742115). Resultado final: **success**.
 
-Resultados confirmados:
+Resultados confirmados no commit da Fase 8:
 - TypeScript: aprovado.
 - ESLint: aprovado.
-- Vitest: 14 ficheiros, 90/90 testes aprovados.
+- Vitest: 15 ficheiros, 97/97 testes aprovados.
 - Build de produção: aprovado.
-- Playwright Chromium: 7/7 testes aprovados.
+- Playwright Chromium: 10/10 testes aprovados.
 - Dependências: nenhuma nova.
 - Lockfile: preservado.
 
-### Tamanhos observados no build da Fase 7
+Os testes de browser cobrem carregamento diferido do modelo, fallback sem WebGPU, pesquisa com referências, conversa real com memória IndexedDB, persistência após reload, nove acções autorizadas no sandbox, responsividade mobile e controlos de privacidade.
 
-- Entrada JavaScript inicial: 350.84 KB, gzip 106.54 KB.
-- CSS: 14.97 KB, gzip 3.47 KB.
+### Tamanhos observados no build da Fase 8
+
+- HTML: 0.69 KB, gzip 0.41 KB.
+- Bundle JavaScript da aplicação: 404.62 KB, gzip 121.22 KB.
+- CSS: 22.28 KB, gzip 5.28 KB.
 - Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
 - Worker WebLLM: 6,121.59 KB.
 
-O build continua a avisar sobre chunks acima de 500 KB devido ao runtime WebLLM. Estes artefactos permanecem separados do bundle inicial e não são descarregados pelo visitante antes de pedir o carregamento do modelo. Os pesos do modelo não estão incluídos nestes tamanhos. Estes números são medições do build, não benchmarks de inferência ou memória numa GPU física.
+O build assinala chunks acima de 500 KB devido ao runtime WebLLM. O runtime e o worker são artefactos separados e permanecem fora do carregamento inicial até o visitante pedir o modelo. Os pesos não estão incluídos nestes tamanhos. Estes valores são medições do build, não benchmarks de inferência, latência ou memória numa GPU física.
 
 ## Executar localmente
 
@@ -276,6 +279,7 @@ docs/
 ├── PHASE-5.md
 ├── PHASE-6.md
 ├── PHASE-7.md
+├── PHASE-8.md
 ├── ARCHITECTURE.md
 ├── DECISIONS.md
 ├── PORTFOLIO-DATA-AUDIT.md
