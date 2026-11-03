@@ -34,7 +34,7 @@ Responsável por organizar a pergunta, recuperar factos, preparar instruções, 
 Responsável por validar comandos contra uma lista fechada de acções e schemas. O modelo não executa ferramentas arbitrárias. A aplicação anfitriã valida e executa a acção. A primeira versão deverá usar router de intenções determinístico e Zod, em vez de depender de function calling nativo de modelos pequenos.
 
 ### Memória local
-Responsável pelo estado e histórico da conversa no dispositivo. A persistência será limitada, transparente e eliminável pelo visitante. A tecnologia concreta será confirmada na implementação. O cache de pesos do WebLLM é separado do histórico da conversa.
+Responsável por sessões e histórico da conversa no dispositivo, com consentimento explícito e desactivado por defeito. A implementação usa IndexedDB com stores independentes para sessões, mensagens e preferência de consentimento. Limites actuais: 20 sessões, 100 mensagens por sessão, retenção de 90 dias e contexto do Agent Core reduzido às últimas 6 mensagens de até 500 caracteres. O visitante pode eliminar a base de dados local. O cache de pesos do WebLLM é separado do histórico da conversa. Consultar `docs/PHASE-7.md`.
 
 ### Fallback determinístico
 Permite pesquisa e navegação sobre dados disponíveis quando WebGPU ou o modelo não estão disponíveis. Não deve simular respostas geradas por IA.
@@ -168,3 +168,19 @@ O modelo pode incluir `actionProposal` no contrato estruturado do Agent Core v1.
 O host recebe apenas comandos internos tipados, nunca URLs livres ou a saída bruta do modelo. Não existem comandos de escrita, publicação, eliminação, execução de código ou acesso ao DOM.
 
 O adaptador real para o portefólio não foi criado. A demonstração não toca no CMS nem em rotas reais; a integração exige uma implementação HostAdapter dentro do repositório anfitrião, depois de nova auditoria e autorização própria.
+
+
+## 14. Memória local implementada na Fase 7
+
+O módulo `src/memory/` contém schemas Zod, repositório IndexedDB e políticas de retenção/contexto.
+
+- `sessions`: ID aleatório, título fixo e genérico, datas e contador.
+- `messages`: ID, sessão, papel, conteúdo e data.
+- `settings`: preferência local de consentimento.
+
+A gravação depende da preferência `historyEnabled`, inicialmente falsa. Desactivar impede gravações futuras sem apagar o histórico já existente. A eliminação total fecha as ligações abertas e chama `deleteDatabase`, removendo também a preferência. Ligações recebem `versionchange` e fecham para evitar bloqueios.
+
+A política impõe 20 sessões, 100 mensagens por sessão e retenção de 90 dias. O histórico entregue ao Agent Core é limitado ao seu contrato actual: seis mensagens e 500 caracteres por mensagem. O histórico persistido não é considerado evidência nem actualiza a Knowledge Base.
+
+A shell inclui um painel mínimo de consentimento, estado e eliminação. A conversa completa ainda não está ligada à memória; essa ligação pertence à Fase 8. A implementação não usa localStorage, sincronização, telemetria ou serviços remotos. O módulo de memória não contém chamadas de rede.
+
