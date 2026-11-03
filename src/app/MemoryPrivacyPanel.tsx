@@ -37,15 +37,24 @@ export function MemoryPrivacyPanel({
 
   useEffect(() => {
     let active = true;
-    void store.getStatus().then((next) => {
+    const applyStatus = (next: LocalMemoryStatus) => {
       if (!active) return;
       setStatus(next);
       onHistoryEnabledChange?.(next.historyEnabled);
-    }).catch((reason: unknown) => {
+    };
+    const handleMemoryUpdate = () => {
+      void store.getStatus().then(applyStatus).catch((reason: unknown) => {
+        if (active) setError(describeError(reason));
+      });
+    };
+
+    void store.getStatus().then(applyStatus).catch((reason: unknown) => {
       if (active) setError(describeError(reason));
     });
+    window.addEventListener("jarvis-memory-updated", handleMemoryUpdate);
     return () => {
       active = false;
+      window.removeEventListener("jarvis-memory-updated", handleMemoryUpdate);
     };
   }, [onHistoryEnabledChange, store]);
 

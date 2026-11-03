@@ -410,6 +410,10 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
       }
     }
 
+    if (historyEnabled) {
+      window.dispatchEvent(new Event("jarvis-memory-updated"));
+    }
+
     abortRef.current = null;
     setBusy(false);
   }
