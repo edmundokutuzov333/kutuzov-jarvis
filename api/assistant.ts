@@ -205,7 +205,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   if (!consumeRateLimit(getClientIp(request.headers))) {
-    response.status(429).json({ message: "O JARVIS está a receber muitos pedidos. Tente novamente dentro de instantes." });
+    response.status(429).json({ message: "Estou a receber muitos pedidos neste momento. Tente novamente dentro de instantes." });
     return;
   }
 
@@ -233,6 +233,6 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     });
     response.status(200).json(result);
   } catch {
-    response.status(502).json({ message: "O JARVIS não conseguiu concluir a resposta. Tente novamente." });
+    response.status(502).json({ message: "Não consegui preparar uma resposta neste momento. Tente novamente." });
   }
 }
