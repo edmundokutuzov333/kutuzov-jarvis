@@ -123,6 +123,28 @@ function parseModelOutput(text: string): { status: string; answer: string; citat
   }
 }
 
+type ParsedAnswer = {
+  status: string;
+  answer: string;
+  citationIds: string[];
+  followUpQuestion: string | null;
+  actionProposal: null;
+};
+
+function fallbackAnswer(question: string): ParsedAnswer {
+  const normalized = question.toLocaleLowerCase("pt-PT");
+  if (/project|projecto|projeto|work|trabalho/.test(normalized)) {
+    return { status: "answered", answer: "Posso mostrar quatro projectos publicados no portefólio: Diga YES & Viva o Mundo Online, Jogue, Vença, Repita., Datas que Ligam e Somos Uma. Abro-os aqui no JARVIS, sem te mandar para outro site.", citationIds: ["project.catalog"], followUpQuestion: "Queres ver um projecto específico?", actionProposal: null };
+  }
+  if (/servi|service|faz|oferec/.test(normalized)) {
+    return { status: "answered", answer: "A prática pública de Edmundo cobre Visual Identity, Art Direction, Editorial & Print, Digital Design e AI Creative Direction.", citationIds: ["services.catalog"], followUpQuestion: "Queres falar de um projecto ou de uma colaboração?", actionProposal: null };
+  }
+  if (/contact|contacto|email|falar|contrat/.test(normalized)) {
+    return { status: "answered", answer: "Para falar sobre um projecto, usa contact@edmundokutuzov.art. O site indica disponibilidade para projectos em 2026.", citationIds: ["identity.site-contact", "identity.site-availability"], followUpQuestion: null, actionProposal: null };
+  }
+  return { status: "answered", answer: "Edmundo Kutuzov é Art Director, Social Media Manager, AI Expert e Content Creator, a trabalhar a partir de Maputo, Moçambique. A prática cruza direcção de arte, sistemas de marca, design digital, conteúdo e inteligência artificial.", citationIds: ["identity.public-profile"], followUpQuestion: "Queres conhecer a experiência, os serviços ou os projectos?", actionProposal: null };
+}
+
 async function generateAnswer(apiKey: string, question: string, history: Array<{ role: "user" | "assistant"; content: string }>) {
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
     method: "POST",
@@ -204,36 +226,39 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return;
   }
 
+  let parsed: ParsedAnswer = fallbackAnswer(question);
+  let modelUsed = false;
   try {
-    const parsed = await generateAnswer(apiKey, question, history);
-    if (!parsed) {
-      response.status(502).json({ message: "Não consegui validar a resposta do modelo." });
-      return;
+    const modelResult = await generateAnswer(apiKey, question, history);
+    if (modelResult) {
+      parsed = modelResult;
+      modelUsed = true;
     }
-    const references = parsed.citationIds
-      .map((id) => SOURCES.find((source) => source.recordId === id))
-      .filter((source): source is (typeof SOURCES)[number] => Boolean(source));
-    response.status(200).json({
-      state: "completed",
-      response: {
-        status: parsed.status,
-        answer: parsed.answer,
-        references,
-        followUpQuestion: parsed.followUpQuestion,
-        actionProposal: null,
-      },
-      retrieval: {
-        status: references.length > 0 ? "matched" : "insufficient_evidence",
-        matchedRecords: references.length,
-        publicFacts: references.length,
-        editorialConstraints: parsed.status === "insufficient_evidence" ? 1 : 0,
-        contextCharacters: PUBLIC_CONTEXT.length,
-        truncated: false,
-      },
-      promptVersion: "1.3.0",
-      modelUsed: true,
-    });
   } catch {
-    response.status(502).json({ message: "Não consegui preparar uma resposta neste momento. Tente novamente." });
+    // Gemini is an enhancement; the verified public fallback keeps the visitor experience usable.
   }
+
+  const references = parsed.citationIds
+    .map((id) => SOURCES.find((source) => source.recordId === id))
+    .filter((source): source is (typeof SOURCES)[number] => Boolean(source));
+  response.status(200).json({
+    state: "completed",
+    response: {
+      status: parsed.status,
+      answer: parsed.answer,
+      references,
+      followUpQuestion: parsed.followUpQuestion,
+      actionProposal: null,
+    },
+    retrieval: {
+      status: references.length > 0 ? "matched" : "insufficient_evidence",
+      matchedRecords: references.length,
+      publicFacts: references.length,
+      editorialConstraints: parsed.status === "insufficient_evidence" ? 1 : 0,
+      contextCharacters: PUBLIC_CONTEXT.length,
+      truncated: false,
+    },
+    promptVersion: "1.3.0",
+    modelUsed,
+  });
 }
