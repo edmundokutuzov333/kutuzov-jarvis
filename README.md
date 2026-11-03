@@ -4,7 +4,7 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 **Arquitectura:** browser-first, inteligência local, WebGPU, zero API de inferência remota e sem servidor dedicado.
 
-> **Estado actual:** Fases 0 a 8 implementadas e aprovadas pelos quality gates automatizados nos limites documentados. A Fase 8 entrega a interface conversacional ligada ao Agent Core, fallback determinístico com excertos factuais, referências, cartões, acções confirmadas e memória IndexedDB integrada. A validação de inferência em GPU física e a avaliação de qualidade do modelo permanecem pendentes para a Fase 9.
+> **Estado actual:** Fases 0 a 8 implementadas e aprovadas por CI. A Fase 9 passou os gates automatizados de avaliação, segurança do browser, bundle e quatro ambientes Playwright. A aceitação integral continua pendente de inferência Qwen3 em GPU física, revisão de respostas reais em português e medições no dispositivo. A Fase 10 não foi iniciada.
 
 ## Objectivo
 
@@ -44,10 +44,10 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 6. Action Engine | Implementada e validada por CI no sandbox; adaptador do portefólio real não implementado |
 | 7. Memória e privacidade | Implementada e validada por CI; integração com a conversa concluída na Fase 8 |
 | 8. Interface conversacional | Implementada e aprovada por CI |
-| 9. Testes e optimização final | Não iniciada |
+| 9. Testes e optimização final | Gates automatizados aprovados; aceitação física/modelo pendente |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 8 está aprovada no CI, mas a qualidade das respostas Qwen3, a inferência física e os benchmarks reais continuam sujeitos a ensaios na Fase 9.
+A validação automatizada não substitui a execução do modelo numa GPU física. O adaptador sandbox também não prova navegação no website publicado. A Fase 9 passou os gates automatizados, mas continua bloqueada para aceitação integral até existir um ensaio físico de WebGPU/Qwen3, validação humana das respostas e medições reais. A Fase 10 permanece por iniciar.
 
 ## Fase 1: investigação e auditoria
 
@@ -216,28 +216,36 @@ Consultar [docs/PHASE-8.md](docs/PHASE-8.md).
 
 ## Quality gates
 
-Último workflow da Fase 8: [JARVIS quality gates, run 41559742115](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41559742115). Resultado final: **success**.
+Último workflow da Fase 9: [JARVIS quality gates, run 41561565406](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41561565406). Resultado final: **success**.
 
-Resultados confirmados no commit da Fase 8:
+Resultados confirmados:
 - TypeScript: aprovado.
 - ESLint: aprovado.
-- Vitest: 15 ficheiros, 97/97 testes aprovados.
+- Vitest: 17 ficheiros, 110/110 testes aprovados.
 - Build de produção: aprovado.
-- Playwright Chromium: 10/10 testes aprovados.
+- Budget do bundle inicial: aprovado.
+- Playwright: 44/44 testes em Chromium, Chrome Stable, Microsoft Edge Stable e WebKit.
 - Dependências: nenhuma nova.
 - Lockfile: preservado.
 
-Os testes de browser cobrem carregamento diferido do modelo, fallback sem WebGPU, pesquisa com referências, conversa real com memória IndexedDB, persistência após reload, nove acções autorizadas no sandbox, responsividade mobile e controlos de privacidade.
+### Tamanhos medidos no build da Fase 9
 
-### Tamanhos observados no build da Fase 8
+| Artefacto | Medição | Budget |
+|---|---:|---:|
+| HTML inicial | 697 bytes | 2,048 bytes |
+| JavaScript inicial | 405,310 bytes | 460,800 bytes |
+| JavaScript inicial gzip | 120,200 bytes | 138,240 bytes |
+| CSS inicial | 22,282 bytes | 25,600 bytes |
+| CSS inicial gzip | 5,253 bytes | 6,144 bytes |
 
-- HTML: 0.69 KB, gzip 0.41 KB.
-- Bundle JavaScript da aplicação: 404.62 KB, gzip 121.22 KB.
-- CSS: 22.28 KB, gzip 5.28 KB.
+Artefactos separados do carregamento inicial:
 - Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
 - Worker WebLLM: 6,121.59 KB.
+- Peso do modelo não incluído nestes tamanhos e não medido por esta CI.
 
-O build assinala chunks acima de 500 KB devido ao runtime WebLLM. O runtime e o worker são artefactos separados e permanecem fora do carregamento inicial até o visitante pedir o modelo. Os pesos não estão incluídos nestes tamanhos. Estes valores são medições do build, não benchmarks de inferência, latência ou memória numa GPU física.
+O HTML inicial não referencia directamente o chunk WebLLM nem o Worker. Os testes de browser confirmam que abrir a interface e conversar sem carregar o modelo não descarrega esses artefactos. O build mantém o aviso de chunks grandes devido à biblioteca WebLLM, mas os budgets do bundle inicial passam.
+
+Os valores não medem tempo de inicialização, first token, tokens/s, RAM ou memória GPU. A aceitação física do modelo continua pendente.
 
 ## Executar localmente
 
@@ -280,6 +288,9 @@ docs/
 ├── PHASE-6.md
 ├── PHASE-7.md
 ├── PHASE-8.md
+├── PHASE-9.md
+├── MODEL-EVALUATION.md
+├── PHASE-9-DEVICE-MATRIX.md
 ├── ARCHITECTURE.md
 ├── DECISIONS.md
 ├── PORTFOLIO-DATA-AUDIT.md
@@ -313,6 +324,9 @@ docs/
 - [Fase 6: Action Engine](docs/PHASE-6.md)
 - [Fase 7: Memória e privacidade](docs/PHASE-7.md)
 - [Fase 8: Interface conversacional](docs/PHASE-8.md)
+- [Fase 9: testes e optimização](docs/PHASE-9.md)
+- [Comparação de modelos](docs/MODEL-EVALUATION.md)
+- [Matriz de testes físicos](docs/PHASE-9-DEVICE-MATRIX.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Decisões técnicas](docs/DECISIONS.md)
 - [Auditoria OpenJarvis](docs/OPENJARVIS-AUDIT.md)
