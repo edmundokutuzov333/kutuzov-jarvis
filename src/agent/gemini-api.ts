@@ -104,7 +104,7 @@ export async function askGeminiAssistant(
       typeof payload.message === "string"
       ? payload.message
       : response.status === 429
-        ? "O JARVIS está a receber muitos pedidos. Tente novamente dentro de instantes."
+        ? "Estou a receber muitos pedidos neste momento. Tente novamente dentro de instantes."
         : "Não foi possível concluir a resposta. Tente novamente.";
     throw new GeminiClientError(message, response.status);
   }
