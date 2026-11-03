@@ -7,10 +7,8 @@ import {
   type KeyboardEvent,
 } from "react";
 
-import { AgentCoreError, runAgentTurn } from "../agent/agent-core";
 import { askGeminiAssistant, getGeminiAvailability } from "../agent/gemini-api";
 import type { AgentReference } from "../agent/response";
-import type { AgentModelPort } from "../agent/model-port";
 import {
   ACTION_REGISTRY,
   dispatchAction,
@@ -32,20 +30,16 @@ import {
 } from "../memory";
 import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
-import { inspectWebGpu, type WebGpuSupport } from "../platform/webgpu";
-import { LocalInferenceRuntime, LocalRuntimeError } from "../runtime/local-runtime";
 import { buildDeterministicFallback, resolveAutomaticProjectUrl } from "./conversation-utils";
 
 interface ChatMessage extends ConversationMessage {
   references?: AgentReference[];
   projects?: KnowledgeEntry[];
-  mode?: "gemini" | "local-ai" | "deterministic";
+  mode?: "gemini" | "deterministic";
   actionProposal?: PortfolioActionProposal | null;
   actionResult?: string | undefined;
   actionStatus?: "executed" | "rejected" | "declined" | undefined;
 }
-
-type ModelStatus = "checking" | "unsupported" | "idle" | "loading" | "ready" | "error";
 
 const SUGGESTIONS = [
   "Quem é Kutuzov?",
@@ -62,7 +56,7 @@ function createId(): string {
 }
 
 function describeError(error: unknown): string {
-  if (error instanceof MemoryStoreError || error instanceof LocalRuntimeError || error instanceof AgentCoreError) {
+  if (error instanceof MemoryStoreError) {
     return error.message;
   }
   if (error instanceof Error) return error.message;
@@ -104,17 +98,11 @@ interface ConversationWorkspaceProps {
 export function ConversationWorkspace({ historyEnabled, onBusyChange }: ConversationWorkspaceProps) {
   const store = useMemo(() => new LocalConversationStore(), []);
   const host = useMemo(() => new DemoPortfolioHostAdapter(), []);
-  const runtimeRef = useRef<LocalInferenceRuntime | null>(null);
-  if (runtimeRef.current === null) runtimeRef.current = new LocalInferenceRuntime();
-
   const abortRef = useRef<AbortController | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const preferenceRef = useRef(historyEnabled);
-  const [modelStatus, setModelStatus] = useState<ModelStatus>("checking");
-  const [geminiAvailable, setGeminiAvailable] = useState(false);
-  const [capability, setCapability] = useState<WebGpuSupport | null>(null);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [loadMessage, setLoadMessage] = useState("A verificar a compatibilidade deste browser.");
+  const [geminiStatus, setGeminiStatus] = useState<"checking" | "available" | "unavailable">("checking");
+  const geminiAvailable = geminiStatus === "available";
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,49 +117,14 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
   useEffect(() => {
     let active = true;
-
-    async function detectAssistant() {
-      const remote = await getGeminiAvailability();
-      if (!active) return;
-      if (remote.available) {
-        setGeminiAvailable(true);
-        setModelStatus("ready");
-        setLoadMessage("JARVIS está pronto. Não é necessário descarregar um modelo.");
-        return;
-      }
-
-      if (import.meta.env.PROD) {
-        setModelStatus("unsupported");
-        setLoadMessage("O serviço de IA ainda não está configurado.");
-        return;
-      }
-
-      const local = await inspectWebGpu();
-      if (!active) return;
-      setCapability(local);
-      setModelStatus(local.status === "available" ? "idle" : "unsupported");
-      setLoadMessage(
-        local.status === "available"
-          ? "Modo local de desenvolvimento disponível."
-          : "A pesquisa local continua disponível neste dispositivo.",
-      );
-    }
-
-    void detectAssistant().catch((reason: unknown) => {
-      if (!active) return;
-      if (import.meta.env.PROD) {
-        setModelStatus("unsupported");
-        setLoadMessage("O serviço de IA está temporariamente indisponível.");
-      } else {
-        setModelStatus("unsupported");
-        setLoadMessage(describeError(reason));
-      }
+    void getGeminiAvailability().then((remote) => {
+      if (active) setGeminiStatus(remote.available ? "available" : "unavailable");
+    }).catch(() => {
+      if (active) setGeminiStatus("unavailable");
     });
-
     return () => {
       active = false;
       abortRef.current?.abort();
-      void runtimeRef.current?.dispose();
     };
   }, []);
 
@@ -222,46 +175,10 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     });
   }, [messages, busy]);
 
-  async function loadModel() {
-    setModelStatus("loading");
-    setLoadProgress(0);
-    setError("");
-    setNotice("");
-    setLoadMessage("A preparar o motor WebLLM...");
-    try {
-      await runtimeRef.current?.initialize((report) => {
-        setLoadProgress(Math.max(0, Math.min(100, Math.round(report.progress * 100))));
-        setLoadMessage(report.progress >= 1 ? "Assistente pronto." : "A preparar o assistente local...");
-      });
-      setModelStatus("ready");
-      setLoadMessage("Modelo inicializado. As respostas com IA são geradas neste dispositivo.");
-    } catch (reason) {
-      if (reason instanceof LocalRuntimeError && reason.code === "LOAD_CANCELLED") {
-        setModelStatus(capability?.status === "available" ? "idle" : "unsupported");
-        setLoadMessage("O carregamento foi cancelado.");
-        return;
-      }
-      setModelStatus("error");
-      setError(describeError(reason));
-    }
-  }
-
-  function cancelModelLoad() {
-    runtimeRef.current?.cancelLoading();
-    setModelStatus(capability?.status === "available" ? "idle" : "unsupported");
-    setLoadMessage("Pedido de cancelamento enviado.");
-  }
-
-  async function releaseModel() {
-    setModelStatus("checking");
-    try {
-      await runtimeRef.current?.release();
-      setModelStatus(capability?.status === "available" ? "idle" : "unsupported");
-      setLoadMessage("Modelo removido da memória GPU. Os ficheiros em cache foram preservados.");
-    } catch (reason) {
-      setModelStatus("error");
-      setError(describeError(reason));
-    }
+  async function retryGemini() {
+    setGeminiStatus("checking");
+    const remote = await getGeminiAvailability();
+    setGeminiStatus(remote.available ? "available" : "unavailable");
   }
 
   async function refreshSessions() {
@@ -398,55 +315,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           setError("");
         }
       }
-    } else if (runtimeRef.current?.isReady) {
-      const modelPort: AgentModelPort = {
-        generate: (request) => runtimeRef.current!.generate(
-          request.userPrompt,
-          request.onToken,
-          request.signal,
-          {
-            systemPrompt: request.systemPrompt,
-            maxTokens: request.maxTokens,
-            temperature: request.temperature,
-            topP: request.topP,
-          },
-        ),
-      };
-
-      try {
-        const result = await runAgentTurn(question, {
-          model: modelPort,
-          history,
-          signal: controller.signal,
-        });
-        if (result.state === "cancelled") {
-          assistantMessage = makeMessage("assistant", "A geração foi interrompida. Pode voltar a enviar a pergunta.");
-        } else {
-          const projects = searchKnowledge(question, {
-            limit: 3,
-            minScore: 2,
-            kinds: ["project"],
-          }).map((item) => item.record);
-          assistantMessage = {
-            ...makeMessage("assistant", result.response.answer),
-            references: result.response.references,
-            projects,
-            mode: "local-ai",
-            actionProposal: result.response.actionProposal,
-          };
-        }
-      } catch {
-        const fallback = buildDeterministicFallback(question);
-        assistantMessage = {
-          ...makeMessage("assistant", fallback.answer),
-          references: fallback.references,
-          projects: fallback.projects,
-          actionProposal: fallback.actionProposal,
-          mode: "deterministic",
-        };
-        setNotice("A resposta não foi concluída. Apresento a informação disponível na pesquisa local.");
-        setError("");
-      }
     } else {
       const fallback = buildDeterministicFallback(question);
       assistantMessage = {
@@ -500,19 +368,11 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     }
   }
 
-  const modelLabel = geminiAvailable
-    ? "GEMINI 3.8 ACTIVA"
-    : modelStatus === "ready"
-      ? "IA LOCAL ACTIVA"
-    : modelStatus === "loading"
-      ? "A CARREGAR MODELO"
-      : modelStatus === "checking"
-        ? "A VERIFICAR"
-        : modelStatus === "unsupported"
-          ? "PESQUISA LOCAL"
-          : modelStatus === "error"
-            ? "MODELO INDISPONÍVEL"
-            : "MODELO NÃO CARREGADO";
+  const assistantStatusText = geminiStatus === "checking"
+    ? "A LIGAR"
+    : geminiAvailable
+      ? "GEMINI 3.8 FLASH"
+      : "PESQUISA DISPONÍVEL";
 
   return (
     <section className="conversation-workspace" aria-label="Conversa com Kutuzov JARVIS">
@@ -526,34 +386,34 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         </div>
 
         <div className="rail-section">
-          <p className="rail-label">ESTADO DO SISTEMA</p>
+          <p className="rail-label">ASSISTENTE</p>
           <div className="rail-status">
-            <span className={modelStatus === "ready" ? "rail-status__dot is-active" : "rail-status__dot"} />
-            <span>{modelLabel}</span>
+            <span className={geminiAvailable ? "rail-status__dot is-active" : "rail-status__dot"} />
+            <span>{assistantStatusText}</span>
           </div>
           <p className="rail-copy">
             {geminiAvailable
-              ? "As respostas são geradas com Gemini. Não é necessário descarregar um modelo."
-              : modelStatus === "ready"
-                ? "O Qwen3 está carregado e a inferência ocorre localmente."
-                : "A pesquisa publicada continua disponível sem descarregar modelos."}
+              ? "Pronto para responder sobre o percurso e o trabalho de Kutuzov."
+              : geminiStatus === "checking"
+                ? "A estabelecer ligação segura."
+                : "A pesquisa de informação pública continua disponível."}
           </p>
         </div>
 
         <div className="rail-divider" />
 
         <div className="rail-section">
-          <p className="rail-label">MODO DE OPERAÇÃO</p>
-          <div className="rail-fact"><span>Inference</span><strong>{geminiAvailable ? "Gemini Cloud" : "Browser-first"}</strong></div>
-          <div className="rail-fact"><span>AI API</span><strong>{geminiAvailable ? "Gemini" : "Local"}</strong></div>
-          <div className="rail-fact"><span>Knowledge</span><strong>Public snapshot</strong></div>
-          <div className="rail-fact"><span>Memory</span><strong>{historyEnabled ? "Opt-in active" : "Not stored"}</strong></div>
+          <p className="rail-label">PODE EXPLORAR</p>
+          <div className="rail-fact"><span>Percurso</span><strong>Profissional</strong></div>
+          <div className="rail-fact"><span>Projectos</span><strong>Publicados</strong></div>
+          <div className="rail-fact"><span>Marcas</span><strong>Experiência</strong></div>
+          <div className="rail-fact"><span>Serviços</span><strong>Criatividade</strong></div>
         </div>
 
         <div className="rail-bottom">
-          <span className="rail-label">PORTFOLIO NAVIGATION</span>
-          <strong>PROJECTS LINKED</strong>
-          <p>Pedidos explícitos para abrir projectos encaminham para a página oficial.</p>
+          <span className="rail-label">PROJECTOS</span>
+          <strong>PORTFÓLIO OFICIAL</strong>
+          <p>Peça ao JARVIS para abrir um projecto publicado.</p>
         </div>
       </aside>
 
@@ -605,71 +465,28 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           </div>
         ) : null}
 
-        {geminiAvailable ? (
-          <div className="model-control" aria-label="Estado do assistente Gemini">
-            <div className="model-control__identity">
-              <span className="model-indicator is-ready" />
-              <div>
-                <strong>JARVIS <span>GEMINI 3.8 FLASH</span></strong>
-                <small>Respostas na nuvem. Sem descarregar modelos no browser.</small>
-              </div>
-            </div>
-            <span className="toolbar-note">ONLINE</span>
-          </div>
-        ) : import.meta.env.PROD ? (
-          <div className="model-control" aria-label="Estado do assistente remoto">
-            <div className="model-control__identity">
-              <span className="model-indicator" />
-              <div>
-                <strong>JARVIS <span>IA REMOTA</span></strong>
-                <small>O serviço Gemini ainda não está configurado.</small>
-              </div>
-            </div>
-            <span className="toolbar-note">A AGUARDAR</span>
-          </div>
-        ) : (
-          <div className="model-control" aria-label="Estado do modelo local de desenvolvimento">
-            <div className="model-control__identity">
-              <span className={modelStatus === "ready" ? "model-indicator is-ready" : "model-indicator"} />
-              <div>
-                <strong>Qwen3 <span>DESENVOLVIMENTO LOCAL</span></strong>
-                <small>Este modo existe apenas para testes locais.</small>
-              </div>
-            </div>
-            <div className="model-control__actions">
-              {modelStatus === "checking" ? (
-                <span className="toolbar-note">A verificar WebGPU...</span>
-              ) : modelStatus === "loading" ? (
-                <button className="button button--quiet" type="button" onClick={cancelModelLoad}>Cancelar</button>
-              ) : modelStatus === "ready" ? (
-                <button className="button button--quiet" type="button" onClick={() => void releaseModel()}>Desactivar IA</button>
-              ) : capability?.status === "available" ? (
-                <button className="button button--primary" type="button" onClick={() => void loadModel()}>Activar IA local</button>
-              ) : (
-                <span className="toolbar-note">Pesquisa disponível</span>
-              )}
+        <div className="model-control" data-testid="gemini-status" aria-label="Estado do assistente Gemini">
+          <div className="model-control__identity">
+            <span className={geminiAvailable ? "model-indicator is-ready" : "model-indicator"} />
+            <div>
+              <strong>JARVIS <span>{assistantStatusText}</span></strong>
+              <small>
+                {geminiAvailable
+                  ? "Gemini está ligado. Não precisa de instalar nada."
+                  : geminiStatus === "checking"
+                    ? "A estabelecer ligação segura ao assistente."
+                    : "Gemini indisponível. A pesquisa pública continua disponível."}
+              </small>
             </div>
           </div>
-        )}
-
-        {modelStatus === "loading" ? (
-          <div className="model-progress" aria-live="polite">
-            <div><span>{loadMessage}</span><strong>{loadProgress}%</strong></div>
-            <div className="model-progress__track" role="progressbar" aria-label="Progresso do carregamento do modelo" aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadProgress}>
-              <span style={{ width: loadProgress + "%" }} />
-            </div>
-          </div>
-        ) : null}
-
-        {modelStatus === "unsupported" ? (
-          <p className="mode-explanation" role="status">
-            {import.meta.env.PROD
-              ? "A IA remota ainda não está configurada. A pesquisa de informação publicada continua disponível."
-              : capability?.status === "unavailable"
-                ? capability.message
-                : "Este browser não disponibiliza WebGPU. Está activo o modo de pesquisa determinística, sem inferência artificial."}
-          </p>
-        ) : null}
+          {geminiStatus === "unavailable" ? (
+            <button className="button button--quiet" type="button" onClick={() => void retryGemini()}>
+              Tentar novamente
+            </button>
+          ) : (
+            <span className="toolbar-note">{geminiAvailable ? "LIGADO" : "A LIGAR"}</span>
+          )}
+        </div>
 
         {error ? <p className="chat-error" role="alert">{error}</p> : null}
         {notice ? <p className="chat-notice" role="status">{notice}</p> : null}
@@ -704,7 +521,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
                       }).format(message.createdAt)}
                     </time>
                     {message.mode === "gemini" ? <span className="message-mode">GEMINI IA</span> : null}
-                    {message.mode === "local-ai" ? <span className="message-mode">IA LOCAL</span> : null}
                     {message.mode === "deterministic" ? <span className="message-mode">PESQUISA LOCAL</span> : null}
                   </div>
                   <p className="chat-message__body">{message.content}</p>
@@ -803,7 +619,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           {busy ? (
             <div className="thinking-indicator" role="status">
               <span className="thinking-indicator__dots"><i /><i /><i /></span>
-              <span>{modelStatus === "ready" ? "A preparar a resposta..." : "A consultar informação..."}</span>
+              <span>{geminiAvailable ? "JARVIS está a preparar a resposta..." : "A consultar informação publicada..."}</span>
             </div>
           ) : null}
           <div ref={transcriptEndRef} />
@@ -838,7 +654,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
                 {busy ? (
                   <button className="button button--quiet" type="button" onClick={() => {
                     abortRef.current?.abort();
-                    runtimeRef.current?.cancelGeneration();
                   }}>
                     Parar
                   </button>
@@ -852,8 +667,8 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         </form>
 
         <div className="chat-footnote">
-          <span>{geminiAvailable ? "PERGUNTAS PROCESSADAS PELA GEMINI API." : "ASSISTENTE DIGITAL DE KUTUZOV."}</span>
-          <span>{geminiAvailable ? "IA GEMINI ACTIVA" : "PESQUISA DISPONÍVEL"}</span>
+          <span>"ASSISTENTE DIGITAL DE KUTUZOV."</span>
+          <span>{geminiAvailable ? "GEMINI 3.8 FLASH" : "PESQUISA DISPONÍVEL"}</span>
         </div>
       </div>
     </section>

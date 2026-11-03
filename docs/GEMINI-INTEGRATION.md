@@ -2,7 +2,7 @@
 
 ## Estado
 
-Código da integração preparado para produção. A activação real depende da variável secreta `GEMINI_API_KEY` no projecto Vercel. A chave não deve ser enviada por chat, incluída em `VITE_*` ou guardada no Git.
+Integração activa no percurso público. `GEMINI_API_KEY` está configurada como variável sensível nos ambientes Production, Preview e Development do projecto Vercel. A presença da variável activa o estado configurado; a chamada efectiva ao modelo deve ser confirmada com uma pergunta na aplicação. A chave nunca deve ser enviada por chat, incluída em `VITE_*` ou guardada no Git.
 
 ## Arquitectura
 
@@ -29,7 +29,7 @@ Gemini não é treinado com os dados do utilizador. O JARVIS usa Retrieval-Augme
 - Modelo configurável por `GEMINI_MODEL`, também server-side.
 - JSON output mode através de `response_format` e schema validation local pelo Agent Core.
 - `store: false` para não guardar o objecto Interaction do lado da Google; a aplicação envia o histórico recente no contexto e não usa `previous_interaction_id`.
-- A resposta é lida em `steps[].content[]` do último passo `model_output`.
+- A resposta é lida em `steps[].content[]` do último passo `model_output`. A API não exige um campo `status` dentro da etapa `model_output`; o estado `completed` é verificado na Interaction.
 
 A API oficial identifica `gemini-3.8-flash` como modelo estável e suporta saída estruturada. A chave nunca pode ser exposta no browser.
 
@@ -87,7 +87,7 @@ No projecto `kutuzov-jarvis`, adicionar:
 
 Depois de adicionar a chave, fazer redeploy da Production. Não partilhar a chave por chat.
 
-A variável ainda não está configurada no momento da implementação. Sem ela, a API devolve `available: false`, e o browser mantém pesquisa local sem descarregar o Qwen3.
+A variável está configurada no projecto Vercel nos três ambientes. A sua disponibilidade é verificada através de GET `/api/assistant`; o GET confirma a presença da variável, não valida uma chamada de inferência. A primeira pergunta real confirma a ligação efectiva ao Gemini.
 
 ## Dados e custo
 
@@ -98,3 +98,10 @@ Preço standard publicado para Gemini 3.8 Flash:
 - a partir de 1 de Janeiro de 2027: USD 1,50 / 1M tokens de entrada e USD 7,50 / 1M tokens de saída.
 
 O custo real depende do volume de pedidos, do contexto recuperado e dos tokens de saída. Definir alertas/orçamentos no Google Cloud e limites de tráfego no Vercel.
+
+
+## Interface pública Gemini-first
+
+A interface pública consulta GET /api/assistant e usa POST /api/assistant para todas as respostas geradas. Não existe opção pública para activar, descarregar ou libertar Qwen3/WebGPU. Se o Gemini estiver indisponível, o visitante recebe uma indicação clara e pode continuar a consultar factos publicados através da pesquisa determinística. O runtime local permanece isolado para ensaios de engenharia, sem ser importado pela aplicação pública.
+
+O endpoint interpreta o último passo `model_output` sem exigir `step.status`. A documentação oficial da Interactions API exemplifica os passos de saída sem esse campo. A conclusão é verificada pelo estado `completed` da Interaction.

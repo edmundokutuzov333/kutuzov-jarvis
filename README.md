@@ -2,9 +2,9 @@
 
 Assistente digital especializado no percurso, identidade profissional, experiência, projectos, competências, serviços e filosofia criativa de Edmundo Kutuzov.
 
-**Arquitectura pública:** Gemini 3.8 Flash através de uma função privada no Vercel, com RAG sobre a Knowledge Base pública. O Qwen3/WebGPU fica como modo local de desenvolvimento, não exigido aos visitantes.
+**Arquitectura pública:** Gemini 3.8 Flash através de uma função privada no Vercel, com RAG sobre a Knowledge Base pública. A interface pública não carrega Qwen3, WebLLM ou WebGPU e não solicita downloads aos visitantes. O código local permanece isolado para ensaios técnicos internos.
 
-> **Estado actual:** os gates automatizados da Fase 9 passaram. A integração Gemini está preparada no código, mas a activação de produção aguarda GEMINI_API_KEY, validação de respostas reais em português e medição de latência/custos. Qwen3/WebGPU fica opcional no desenvolvimento local. A Fase 10 não foi iniciada.
+> **Estado actual:** Gemini está integrado no endpoint privado e `GEMINI_API_KEY` está configurada nos ambientes Vercel Production, Preview e Development. A interface pública usa exclusivamente Gemini; sem disponibilidade da API, apresenta pesquisa determinística sem inferência artificial. A aceitação real depende de testar perguntas na produção, rever respostas em português e medir latência/custos. A Fase 10 não foi iniciada.
 
 ## Objectivo
 
@@ -17,7 +17,7 @@ Não é um chatbot genérico, um sistema multiagente ou um clone do ChatGPT.
 - **Sem downloads em produção:** os visitantes usam Gemini 3.8 Flash através de uma função server-side no Vercel.
 - **Chave protegida:** GEMINI_API_KEY existe apenas no ambiente do servidor; nunca usar VITE_ nem colocar a chave no Git.
 - **RAG factual:** Gemini recebe a pergunta, contexto recente limitado e factos públicos recuperados pela Knowledge Base.
-- **Desenvolvimento local:** Qwen3/WebGPU permanece como opção de desenvolvimento, não como requisito para o visitante.
+- **Interface pública Gemini-first:** Qwen3/WebGPU não é importado nem apresentado no percurso público. O runtime local fica isolado no código técnico para ensaios internos, sem ser carregado pelos visitantes.
 - **Factualidade:** a Knowledge Base é a fonte de verdade; cada facto tem origem e estado editorial.
 - **Acções limitadas:** o modelo propõe acções tipadas; a aplicação valida schemas. A abertura explícita de um projecto publicado pode navegar para a rota fixa depois de validar o slug e a menção do projecto; as restantes acções exigem confirmação.
 - **Privacidade:** o histórico persistente opcional fica no browser e pode ser eliminado. Quando Gemini está activo, a pergunta, contexto recente e factos recuperados são enviados à Google para inferência.
@@ -47,7 +47,7 @@ O repositório oficial do portefólio continua separado e não foi alterado nest
 | 9. Testes e optimização final | Gates automatizados aprovados; aceitação física/modelo pendente |
 | 10. Preparação da integração | Não iniciada |
 
-A validação automatizada não substitui ensaios físicos. A inferência Gemini em produção não exige que o visitante descarregue Qwen3. O teste físico de WebGPU/Qwen3 mantém-se pendente apenas para o modo local de desenvolvimento. A Fase 10 permanece por iniciar.
+A validação automatizada não substitui ensaios físicos. A interface pública usa Gemini e não exige GPU, WebGPU ou descarga de modelos. O runtime Qwen3 permanece isolado para ensaios internos e não faz parte da experiência pública. A Fase 10 permanece por iniciar.
 
 ## Fase 1: investigação e auditoria
 

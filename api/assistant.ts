@@ -19,13 +19,24 @@ interface GeminiOutputPart {
   text?: string;
 }
 
-interface GeminiInteractionResponse {
+export interface GeminiInteractionResponse {
   status?: string;
   steps?: Array<{
     type?: string;
-    status?: string;
     content?: GeminiOutputPart[];
   }>;
+}
+
+export function extractGeminiText(payload: GeminiInteractionResponse): string | null {
+  const finalOutput = [...(payload.steps ?? [])]
+    .reverse()
+    .find((step) => step.type === "model_output");
+  const text = finalOutput?.content
+    ?.filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text ?? "")
+    .join("")
+    .trim();
+  return text || null;
 }
 
 const MODEL = process.env["GEMINI_MODEL"]?.trim() || "gemini-3.8-flash";
@@ -141,14 +152,7 @@ function createGeminiModel(apiKey: string): AgentModelPort {
         throw new Error("Gemini não concluiu a interacção.");
       }
 
-      const finalOutput = [...(payload.steps ?? [])]
-        .reverse()
-        .find((step) => step.type === "model_output" && step.status === "done");
-      const text = finalOutput?.content
-        ?.filter((part) => part.type === "text" && typeof part.text === "string")
-        .map((part) => part.text ?? "")
-        .join("")
-        .trim();
+      const text = extractGeminiText(payload);
 
       if (!text) {
         throw new Error("Gemini não devolveu conteúdo de texto.");

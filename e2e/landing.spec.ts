@@ -1,65 +1,31 @@
 import { expect, test } from "@playwright/test";
 
-test("opens the conversational workspace without preloading model code or weights", async ({ page }) => {
+test("opens the Gemini-first workspace without loading any local model", async ({ page }) => {
   const modelRequests: string[] = [];
   const runtimeRequests: string[] = [];
-
   page.on("request", (request) => {
     const url = request.url();
-    if (
-      url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
-      url.includes("binary-mlc-llm-libs")
-    ) modelRequests.push(url);
-    if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
-      runtimeRequests.push(url);
-    }
+    if (url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") || url.includes("binary-mlc-llm-libs")) modelRequests.push(url);
+    if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) runtimeRequests.push(url);
   });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", {
-    name: "O que gostaria de conhecer sobre Kutuzov?",
-  })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "O que gostaria de conhecer sobre Kutuzov?" })).toBeVisible();
   await expect(page.getByLabel("Escreva a sua pergunta")).toBeVisible();
   await expect(page.getByRole("button", { name: /Nova conversa/ })).toBeVisible();
-
-  await expect(page.getByText(/Qwen3-0.6B/)).toBeVisible();
-  await expect(page.getByText(/A VERIFICAR|IA LOCAL ACTIVA|PESQUISA LOCAL|MODELO NÃO CARREGADO|MODELO INDISPONÍVEL/)).toBeVisible();
+  await expect(page.getByTestId("gemini-status")).toBeVisible();
+  await expect(page.getByText(/Qwen3|WebGPU|Activar IA local|Carregar modelo local/)).toHaveCount(0);
 
   expect(modelRequests).toHaveLength(0);
   expect(runtimeRequests).toHaveLength(0);
 });
 
-test("shows WebGPU readiness without fetching model artifacts", async ({ page }) => {
-  const artifactRequests: string[] = [];
-  const runtimeRequests: string[] = [];
-  page.on("request", (request) => {
-    const url = request.url();
-    if (
-      url.includes("huggingface.co/mlc-ai/Qwen3-0.6B-q4f16_1-MLC") ||
-      url.includes("binary-mlc-llm-libs")
-    ) artifactRequests.push(url);
-    if (/\/assets\/lib-[^/]+\.js/.test(url) || /\/assets\/webllm\.worker-[^/]+\.js/.test(url)) {
-      runtimeRequests.push(url);
-    }
-  });
-
+test("keeps local model controls completely out of the visitor interface", async ({ page }) => {
   await page.goto("/");
-  const modelAction = page.getByRole("button", { name: "Carregar modelo local" });
-  const readiness = page.getByText(/WebGPU indisponível|WebGPU não está disponível|Carregar modelo local/);
-
-  await expect(readiness).toBeVisible();
-  const compatible = await modelAction.count();
-
-  if (compatible === 1) {
-    await expect(modelAction).toBeVisible();
-  } else {
-    await expect(page.getByText(/WebGPU indisponível|WebGPU não está disponível/)).toBeVisible();
-  }
-
-  expect(artifactRequests).toHaveLength(0);
-  expect(runtimeRequests).toHaveLength(0);
+  await expect(page.getByTestId("gemini-status")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Activar IA local|Carregar modelo local|Libertar GPU/ })).toHaveCount(0);
+  await expect(page.getByText(/WebGPU|Qwen3|modelo local/i)).toHaveCount(0);
 });
-
 test("uses honest deterministic search when WebGPU is unavailable", async ({ page }) => {
   await page.addInitScript(() => {
     try {
@@ -73,7 +39,7 @@ test("uses honest deterministic search when WebGPU is unavailable", async ({ pag
   });
 
   await page.goto("/");
-  await expect(page.getByText("PESQUISA LOCAL", { exact: true }).first()).toBeVisible();
+  await expect(page.getByTestId("gemini-status")).toContainText("PESQUISA DISPONÍVEL");
 
   const composer = page.getByLabel("Escreva a sua pergunta");
   await composer.fill("Quem é Kutuzov?");
@@ -84,6 +50,39 @@ test("uses honest deterministic search when WebGPU is unavailable", async ({ pag
   )).toBeVisible();
   await expect(page.getByText("Perfil público de Edmundo Kutuzov", { exact: true })).toBeVisible();
   await expect(page.getByText(/PESQUISA LOCAL/).last()).toBeVisible();
+});
+
+test("sends visitor questions to the Gemini endpoint and renders its answer", async ({ page }) => {
+  await page.route("**/api/assistant", async (route) => {
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ available: true, provider: "gemini", model: "gemini-3.8-flash" }) });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        state: "completed",
+        response: {
+          status: "answered",
+          answer: "Edmundo Kutuzov é Art Director, com percurso profissional em Maputo.",
+          references: [{ recordId: "identity.public-profile", label: "Perfil público de Edmundo Kutuzov", path: "docs/PORTFOLIO-DATA-AUDIT.md", capturedAt: "2026-11-02" }],
+          followUpQuestion: null,
+          actionProposal: null
+        },
+        retrieval: { status: "matched", matchedRecords: 1, publicFacts: 1, editorialConstraints: 0, contextCharacters: 220, truncated: false },
+        promptVersion: "1.1.0",
+        modelUsed: true
+      })
+    });
+  });
+
+  await page.goto("/");
+  await expect(page.getByTestId("gemini-status")).toContainText("GEMINI 3.8 FLASH");
+  await page.getByLabel("Escreva a sua pergunta").fill("Quem é Kutuzov?");
+  await page.getByRole("button", { name: "Enviar" }).click();
+  await expect(page.getByText("Edmundo Kutuzov é Art Director, com percurso profissional em Maputo.")).toBeVisible();
+  await expect(page.locator(".message-mode").filter({ hasText: "GEMINI IA" })).toBeVisible();
 });
 
 test("integrates opt-in memory with a real conversation and restores it after reload", async ({ page }) => {
