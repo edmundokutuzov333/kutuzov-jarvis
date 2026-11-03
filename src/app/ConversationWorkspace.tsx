@@ -41,8 +41,8 @@ interface ChatMessage extends ConversationMessage {
   projects?: KnowledgeEntry[];
   mode?: "local-ai" | "deterministic";
   actionProposal?: PortfolioActionProposal | null;
-  actionResult?: string;
-  actionStatus?: "executed" | "rejected" | "declined";
+  actionResult?: string | undefined;
+  actionStatus?: "executed" | "rejected" | "declined" | undefined;
 }
 
 type ModelStatus = "checking" | "unsupported" | "idle" | "loading" | "ready" | "error";
@@ -566,7 +566,9 @@ export function ConversationWorkspace({ historyEnabled }: ConversationWorkspaceP
 
         {modelStatus === "unsupported" ? (
           <p className="mode-explanation" role="status">
-            {capability?.message ?? "Este browser não disponibiliza WebGPU. Está activo o modo de pesquisa determinística, sem inferência artificial."}
+            {capability?.status === "unavailable"
+              ? capability.message
+              : "Este browser não disponibiliza WebGPU. Está activo o modo de pesquisa determinística, sem inferência artificial."}
           </p>
         ) : null}
 
