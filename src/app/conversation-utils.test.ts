@@ -61,6 +61,19 @@ describe("deterministic conversation fallback", () => {
     expect(result.references.some((reference) => reference.recordId === "identity.public-profile")).toBe(true);
   });
 
+  it("speaks in first person and hides raw snapshot metadata in public search", () => {
+    const identity = buildDeterministicFallback("Quem é Kutuzov?");
+    expect(identity.answer).toContain("Sou Art Director");
+    expect(identity.answer).not.toContain("O perfil público identifica");
+
+    const projects = buildDeterministicFallback("Quais são os projectos?");
+    expect(projects.answer).toContain("projectos que tenho publicados");
+    expect(projects.answer).not.toContain("slug");
+    expect(projects.answer).not.toContain("snapshot");
+    expect(projects.answer).not.toContain("Projecto publicado com o slug");
+    expect(projects.projects.length).toBeGreaterThan(0);
+  });
+
   it("does not retrieve a public profile just because a private-data question names Kutuzov", () => {
     const result = buildDeterministicFallback(
       "Qual é a morada residencial privada e o número de telefone pessoal de Kutuzov?",
