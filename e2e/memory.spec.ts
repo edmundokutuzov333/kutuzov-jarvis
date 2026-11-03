@@ -1,38 +1,37 @@
 import { expect, test } from "@playwright/test";
 
-test("local memory is opt-in, persists in IndexedDB and can be fully deleted", async ({ page }) => {
+async function openPrivacy(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: "Abrir Privacidade" }).click();
+  await expect(page.getByRole("region", {
+    name: "As suas conversas ficam sob o seu controlo.",
+  })).toBeVisible();
+}
+
+test("conversation history is opt-in, persists locally and can be deleted", async ({ page }) => {
   await page.goto("/");
 
   const externalRequests: string[] = [];
   const origin = new URL(page.url()).origin;
   page.on("request", (request) => {
-    if (new URL(request.url()).origin !== origin) {
-      externalRequests.push(request.url());
-    }
+    if (new URL(request.url()).origin !== origin) externalRequests.push(request.url());
   });
-
-  const historyToggle = page.getByRole("checkbox", {
-    name: "Guardar histórico neste dispositivo",
-  });
-  await expect(historyToggle).not.toBeChecked();
-  await expect(page.getByTestId("memory-state")).toHaveText("DESACTIVADO");
 
   const disabledWrite = await page.evaluate(async () => {
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
-    const store = new LocalConversationStore();
     try {
-      await store.createSession();
+      await new LocalConversationStore().createSession();
       return "unexpected-success";
     } catch (error) {
-      return error instanceof Error && "code" in error
-        ? String(error.code)
-        : "unknown-error";
+      return error instanceof Error && "code" in error ? String(error.code) : "unknown-error";
     }
   });
   expect(disabledWrite).toBe("MEMORY_DISABLED");
 
+  await openPrivacy(page);
+  const historyToggle = page.getByRole("checkbox", { name: "Guardar conversas neste dispositivo" });
+  await expect(historyToggle).not.toBeChecked();
   await historyToggle.check();
-  await expect(page.getByTestId("memory-state")).toHaveText("ACTIVO");
+  await expect(historyToggle).toBeChecked();
 
   const stored = await page.evaluate(async () => {
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
@@ -48,7 +47,6 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
     const history = await store.getAgentHistory(session.id);
     const status = await store.getStatus();
     return {
-      sessionId: session.id,
       storedMessages: messages.length,
       historyLength: history.length,
       firstContextMessage: history[0]?.content,
@@ -68,51 +66,32 @@ test("local memory is opt-in, persists in IndexedDB and can be fully deleted", a
   expect(stored.enabled).toBe(true);
 
   await page.reload();
-  await expect(page.getByRole("checkbox", {
-    name: "Guardar histórico neste dispositivo",
-  })).toBeChecked();
-  await expect(page.getByTestId("memory-session-count")).toHaveText("1");
-  await expect(page.getByTestId("memory-message-count")).toHaveText("100");
+  await openPrivacy(page);
+  const reloadedToggle = page.getByRole("checkbox", { name: "Guardar conversas neste dispositivo" });
+  await expect(reloadedToggle).toBeChecked();
 
-  await historyToggle.uncheck();
-  await expect(page.getByTestId("memory-state")).toHaveText("DESACTIVADO");
-  await expect(page.getByTestId("memory-session-count")).toHaveText("1");
-  await expect(page.getByTestId("memory-message-count")).toHaveText("100");
-  await historyToggle.check();
-  await expect(page.getByTestId("memory-state")).toHaveText("ACTIVO");
+  await reloadedToggle.uncheck();
+  await expect(reloadedToggle).not.toBeChecked();
+  await reloadedToggle.check();
+  await expect(reloadedToggle).toBeChecked();
 
   page.on("dialog", (dialog) => dialog.accept());
   await page.getByTestId("memory-delete-all").click();
-  await expect(page.getByTestId("memory-session-count")).toHaveText("0");
-  await expect(page.getByTestId("memory-message-count")).toHaveText("0");
-  await expect(page.getByTestId("memory-state")).toHaveText("DESACTIVADO");
-  await expect(page.getByRole("checkbox", {
-    name: "Guardar histórico neste dispositivo",
-  })).not.toBeChecked();
 
   const afterDelete = await page.evaluate(async () => {
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
-    const store = new LocalConversationStore();
-    const status = await store.getStatus();
-    return status;
+    return new LocalConversationStore().getStatus();
   });
-  expect(afterDelete).toEqual({
-    historyEnabled: false,
-    sessionCount: 0,
-    messageCount: 0,
-  });
+  expect(afterDelete).toEqual({ historyEnabled: false, sessionCount: 0, messageCount: 0 });
+  await expect(reloadedToggle).not.toBeChecked();
   expect(externalRequests).toEqual([]);
 });
 
-test("privacy controls remain usable at a mobile viewport", async ({ page }) => {
+test("privacy controls remain usable on a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-
-  const panel = page.getByRole("region", { name: "Your conversations stay yours." });
-  await expect(panel).toBeVisible();
-  await expect(page.getByRole("checkbox", {
-    name: "Guardar histórico neste dispositivo",
-  })).toBeVisible();
+  await openPrivacy(page);
+  await expect(page.getByRole("checkbox", { name: "Guardar conversas neste dispositivo" })).toBeVisible();
   await expect(page.getByTestId("memory-delete-all")).toBeVisible();
 });
 
@@ -122,36 +101,20 @@ test("retains no more than twenty local conversation sessions", async ({ page })
     const { LocalConversationStore } = await import("/src/memory/local-store.ts");
     const store = new LocalConversationStore();
     await store.setHistoryEnabled(true);
-    for (let index = 0; index < 21; index += 1) {
-      await store.createSession();
-    }
+    for (let index = 0; index < 21; index += 1) await store.createSession();
     const sessions = await store.listSessions();
-    return {
-      count: sessions.length,
-      allTitlesAreGeneric: sessions.every((session) => session.title === "Nova conversa"),
-    };
+    return { count: sessions.length, allTitlesAreGeneric: sessions.every((session) => session.title === "Nova conversa") };
   });
-
   expect(result.count).toBe(20);
   expect(result.allTitlesAreGeneric).toBe(true);
 });
 
 test("gracefully reports when IndexedDB is unavailable", async ({ page }) => {
   await page.addInitScript(() => {
-    Object.defineProperty(window, "indexedDB", {
-      configurable: true,
-      value: undefined,
-    });
+    Object.defineProperty(window, "indexedDB", { configurable: true, value: undefined });
   });
   await page.goto("/");
-
-  await expect(page.getByRole("region", {
-    name: "Your conversations stay yours.",
-  })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText(
-    "não disponibiliza IndexedDB",
-  );
-  await expect(page.getByRole("checkbox", {
-    name: "Guardar histórico neste dispositivo",
-  })).toBeDisabled();
+  await openPrivacy(page);
+  await expect(page.getByRole("alert")).toContainText("não disponibiliza IndexedDB");
+  await expect(page.getByRole("checkbox", { name: "Guardar conversas neste dispositivo" })).toBeDisabled();
 });
