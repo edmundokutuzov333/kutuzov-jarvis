@@ -982,3 +982,14 @@ html, body, #root{width:100%;min-height:100%;margin:0}html, body{overflow:hidden
 .desktop-dock__count{padding:0 7px;color:#7898c4;font:7px var(--mono);letter-spacing:.08em}
 @media(max-width:760px){.desktop-topbar__signal{display:none}.core-stage__identity{bottom:25%!important}.voice-console{bottom:3%}.voice-console__button{width:118px;height:118px}.window--project,.window--project-1,.window--project-2{position:relative;inset:auto!important;width:100%!important;height:auto!important;margin:0 0 13px;transform:none!important}.project-window__visual{height:220px}.project-deck__grid{grid-template-columns:1fr}.desktop-dock__count{display:none}}
 @media(prefers-reduced-motion:reduce){.voice-console__halo,.voice-console__bars i,.voice-console__button,.project-window__visual-orbit,.project-deck__visual i{animation:none!important}}
+
+/* UX alignment: reserve a clear voice lane above the dock. */
+.core-stage__identity{bottom:20%!important}
+.voice-console{bottom:6%}
+.voice-console__hint{white-space:nowrap}
+.voice-console__notice{bottom:auto;top:100%;margin-top:5px;transform:translateX(-50%)}
+@media(max-width:760px){
+  .core-stage__identity{bottom:0!important}
+  .voice-console{bottom:4%}
+  .voice-console__hint{font-size:7px}
+}
