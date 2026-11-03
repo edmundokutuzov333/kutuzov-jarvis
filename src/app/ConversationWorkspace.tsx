@@ -226,7 +226,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         const savedHistory = await store.getAgentHistory(activeSessionId);
         history = savedHistory.slice(0, -1);
         void refreshSessions();
-      } catch (reason) {
+      } catch {
         activeSessionId = null;
         setCurrentSessionId(null);
         setNotice("Não consegui guardar esta conversa neste dispositivo. Pode continuar normalmente.");
