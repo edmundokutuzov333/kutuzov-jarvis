@@ -667,7 +667,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         </form>
 
         <div className="chat-footnote">
-          <span>"ASSISTENTE DIGITAL DE KUTUZOV."</span>
+          <span>ASSISTENTE DIGITAL DE KUTUZOV.</span>
           <span>{geminiAvailable ? "GEMINI 3.8 FLASH" : "PESQUISA DISPONÍVEL"}</span>
         </div>
       </div>
