@@ -22,8 +22,7 @@ import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
 import { buildDeterministicFallback } from "./conversation-utils";
 import { ProjectDeck } from "./ProjectDeck";
-import { VoicePill } from "./VoicePill";
-import { useLiveVoice } from "../voice/live-session";
+import type { LiveVoiceController } from "../voice/live-session";
 
 interface ChatMessage extends ConversationMessage { projects?: KnowledgeEntry[]; }
 
@@ -69,9 +68,12 @@ function makeMessage(role: ConversationMessage["role"], content: string): ChatMe
 interface ConversationWorkspaceProps {
   historyEnabled: boolean;
   onBusyChange?: (busy: boolean) => void;
+  voice: LiveVoiceController;
+  voiceTranscript: string;
+  onOpenProject: (project: KnowledgeEntry) => void;
 }
 
-export function ConversationWorkspace({ historyEnabled, onBusyChange }: ConversationWorkspaceProps) {
+export function ConversationWorkspace({ historyEnabled, onBusyChange, voice, voiceTranscript, onOpenProject }: ConversationWorkspaceProps) {
   const store = useMemo(() => new LocalConversationStore(), []);
   const abortRef = useRef<AbortController | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
@@ -87,14 +89,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
   const [sessions, setSessions] = useState<ConversationSession[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const voiceOutputRef = useRef("");
-  const voice = useLiveVoice({
-    onInputTranscript: (text) => setInput(text.slice(0, 2_000)),
-    onOutputTranscript: (text) => {
-      voiceOutputRef.current += text;
-      setNotice(voiceOutputRef.current.slice(-600));
-    },
-    onError: (message) => setNotice(message),
-  });
 
   useEffect(() => {
     let active = true;
@@ -135,6 +129,10 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     onBusyChange?.(busy || voice.state === "processing" || voice.state === "listening" || voice.state === "speaking");
     return () => onBusyChange?.(false);
   }, [busy, onBusyChange, voice.state]);
+
+  useEffect(() => {
+    if (voiceTranscript) setInput(voiceTranscript.slice(0, 2_000));
+  }, [voiceTranscript]);
 
   useEffect(() => {
     if (preferenceRef.current === historyEnabled) return;
@@ -375,7 +373,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
                   <div className="chat-message__meta"><span>{message.role === "user" ? "VOCÊ" : "KUTUZOV"}</span></div>
                   <p className="chat-message__body">{message.content}</p>
                   {message.projects && message.projects.length > 0 ? (
-                    <ProjectDeck projects={message.projects} />
+                    <ProjectDeck projects={message.projects} onOpenProject={onOpenProject} />
                   ) : null}
                 </article>
               ))}
@@ -396,12 +394,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           <div className="chat-composer__box">
             <textarea id="kutuzov-message" aria-label="Escreva a sua mensagem" value={input} onChange={(event) => setInput(event.target.value.slice(0, 2_000))} onKeyDown={handleInputKeyDown} placeholder="Escreva-me uma mensagem..." maxLength={2_000} rows={2} disabled={busy} />
             <div className="chat-composer__footer">
-              <VoicePill
-                state={voice.state}
-                supported={voice.supported}
-                onStart={() => { voiceOutputRef.current = ""; setNotice(""); void voice.start(); }}
-                onStop={voice.stop}
-              />
+              <div className="chat-composer__voice-note">Voz disponível no núcleo central</div>
               <div>
                 {busy ? <button className="button button--quiet" type="button" onClick={() => abortRef.current?.abort()}>Parar</button> : null}
                 <button className="send-button" type="submit" disabled={!input.trim() || busy}>Enviar <span aria-hidden="true">↗</span></button>
