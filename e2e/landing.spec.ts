@@ -196,3 +196,22 @@ test("renders hostile visitor input as inert text and sends no conversation data
   expect(executed).toBe(false);
   expect(externalRequests).toEqual([]);
 });
+
+test("renders the immersive Jarvis core and lets desktop windows be dragged", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  await expect(page.getByTestId("jarvis-core")).toBeVisible();
+  const window = page.locator('[data-window-id="conversation"]');
+  const bar = window.locator(".floating-window__bar");
+  const before = await window.boundingBox();
+  const handle = await bar.boundingBox();
+  if (!before || !handle) throw new Error("Conversation window geometry is unavailable.");
+  await page.mouse.move(handle.x + 150, handle.y + 22);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + 220, handle.y + 82, { steps: 6 });
+  await page.mouse.up();
+  const after = await window.boundingBox();
+  if (!after) throw new Error("Conversation window disappeared after dragging.");
+  expect(after.x).toBeGreaterThan(before.x + 40);
+  expect(after.y).toBeGreaterThan(before.y + 40);
+});
