@@ -8,9 +8,9 @@ Assistente digital especializado no percurso, identidade profissional, experiên
 
 ## Objectivo
 
-O JARVIS é um assistente digital especializado no percurso profissional de Kutuzov. Ajuda os visitantes a explorar identidade, experiência, projectos, marcas, competências e serviços, e pode abrir directamente casos de estudo publicados quando o visitante pede essa navegação.
+A experiência pública é uma conversa directa com Edmundo Kutuzov. O visitante pode conhecer o meu percurso, explorar projectos e marcas, perceber os serviços e abrir casos de estudo publicados. A interface evita nomes de fornecedores, painéis técnicos e controlos de demonstração.
 
-Não é um chatbot genérico, um sistema multiagente ou um clone do ChatGPT.
+O modelo responde em primeira pessoa com base em factos públicos confirmados. Não inventa experiências nem preenche lacunas.
 
 ## Princípios obrigatórios
 
@@ -30,6 +30,10 @@ Não é um chatbot genérico, um sistema multiagente ou um clone do ChatGPT.
 - Portefólio oficial, fonte de referência read-only: [edmundokutuzov333/kutuzovportfolio333](https://github.com/edmundokutuzov333/kutuzovportfolio333)
 
 O repositório oficial do portefólio continua separado e não foi alterado nesta fase.
+
+## Experiência pública
+
+Apenas a conversa fica aberta por defeito. A privacidade é opcional e abre num painel separado. O laboratório público de comandos foi retirado, os cartões de projecto abrem directamente os casos de estudo oficiais e a interface não mostra nomes de fornecedores de IA, caminhos de fontes, estados técnicos ou metadados de demonstração. A voz conversacional usa primeira pessoa, sempre limitada aos factos profissionais confirmados na Knowledge Base.
 
 ## Estado das fases
 
