@@ -371,7 +371,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
             actionProposal: result.response.actionProposal,
           };
         }
-      } catch (reason) {
+      } catch {
         const fallback = buildDeterministicFallback(question);
         assistantMessage = {
           ...makeMessage("assistant", fallback.answer),
