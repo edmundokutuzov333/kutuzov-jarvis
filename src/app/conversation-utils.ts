@@ -71,6 +71,50 @@ function openProjectProposal(slug: string): PortfolioActionProposal | null {
   return parsed.success ? parsed.data : null;
 }
 
+function metadataString(record: KnowledgeEntry, key: string): string {
+  const value = record.metadata[key];
+  return typeof value === "string" || typeof value === "number" ? String(value) : "";
+}
+
+function formatPublicFact(record: KnowledgeEntry): string | null {
+  if (record.id === "identity.public-profile") {
+    return "Sou Art Director. O meu perfil profissional também apresenta áreas de Social Media Manager, AI Expert e Content Creator. Trabalho a partir de Maputo, Moçambique.";
+  }
+  if (record.id === "identity.published-positioning") {
+    return "A minha abordagem criativa procura criar sistemas de marca que conquistam atenção e permanecem na memória.";
+  }
+  if (record.kind === "project") return null;
+  if (record.kind === "experience") {
+    const role = metadataString(record, "role");
+    const organization = metadataString(record, "organization") || record.title;
+    const period = metadataString(record, "period");
+    if (role) return "Na " + organization + ", trabalhei como " + role + (period ? " (" + period + ")" : "") + ".";
+  }
+  if (record.kind === "client") {
+    const name = metadataString(record, "name") || record.title;
+    return "No meu portefólio constam marcas como " + name + ".";
+  }
+  if (record.kind === "service") {
+    const name = metadataString(record, "name") || record.title;
+    return "Entre os serviços que apresento está " + name + ".";
+  }
+  if (record.kind === "skill") {
+    const name = metadataString(record, "name") || record.title;
+    const score = metadataString(record, "score");
+    return "A minha página de competências apresenta " + name + (score ? " com uma pontuação publicada de " + score + "." : ".");
+  }
+  if (record.kind === "discipline") {
+    const items = record.metadata["items"];
+    if (Array.isArray(items) && items.every((item) => typeof item === "string")) {
+      return "Entre as minhas disciplinas estão " + items.join(", ") + ".";
+    }
+  }
+  return record.title + ": " + record.content
+    .replace(/^Experiência publicada:\s*/i, "")
+    .replace(/^O perfil público identifica Edmundo Kutuzov como/i, "Sou")
+    .trim();
+}
+
 export function resolveAutomaticProjectUrl(
   proposal: PortfolioActionProposal | null | undefined,
   intentText: string,
@@ -188,20 +232,18 @@ export function buildDeterministicFallback(
     .slice(0, 3)
     .map((result) => result.record);
 
-  const excerpts: string[] = [];
-  let remainingCharacters = 1_200;
-  for (const { record } of publicResults.slice(0, 3)) {
-    if (remainingCharacters <= 0) break;
-    const title = record.title.slice(0, 110);
-    const content = record.content.slice(0, Math.min(420, remainingCharacters));
-    const excerpt = title + "\n" + content;
-    excerpts.push(excerpt);
-    remainingCharacters -= excerpt.length + 4;
-  }
+  const excerpts = publicResults
+    .filter(({ record }) => record.kind !== "project")
+    .slice(0, 4)
+    .map(({ record }) => formatPublicFact(record))
+    .filter((value): value is string => value !== null)
+    .slice(0, 4);
 
-  const answer = publicResults.length > 0
-    ? "Posso partilhar consigo o que está publicado:\n\n" + excerpts.join("\n\n")
-    : "Ainda não encontrei informação pública confirmada sobre isso. Prefiro não inventar.";
+  const answer = excerpts.length > 0
+    ? "Posso partilhar consigo o que está confirmado:\n\n" + excerpts.join("\n\n")
+    : projects.length > 0
+      ? "Estes são alguns dos projectos que tenho publicados:"
+      : "Ainda não encontrei informação pública confirmada sobre isso. Prefiro não inventar.";
 
   return {
     answer,
