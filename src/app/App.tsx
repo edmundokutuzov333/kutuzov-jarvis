@@ -1,5 +1,6 @@
 import { LocalEnginePanel } from "./LocalEnginePanel";
 import { ActionEnginePanel } from "./ActionEnginePanel";
+import { MemoryPrivacyPanel } from "./MemoryPrivacyPanel";
 
 const systemStatus = [
   {
@@ -20,6 +21,12 @@ const systemStatus = [
     detail: "Nine allowlisted commands, strict schemas, explicit confirmation and an isolated sandbox host.",
     state: "SANDBOX / DEMO",
   },
+  {
+    label: "Memory & Privacy",
+    value: "IndexedDB / opt-in",
+    detail: "Conversation history is disabled by default, bounded on-device and removable by the visitor.",
+    state: "LOCAL / PRIVATE",
+  },
 ] as const;
 
 export function App() {
@@ -33,27 +40,27 @@ export function App() {
         <div className="topbar__meta">
           <span className="status-dot" aria-hidden="true" />
           <span>INDEPENDENT BUILD</span>
-          <span className="topbar__phase">PHASE 06</span>
+          <span className="topbar__phase">PHASE 07</span>
         </div>
       </header>
 
       <section className="intro" aria-labelledby="intro-title">
-        <p className="eyebrow">PERSONAL INTELLIGENCE / ACTION ENGINE</p>
+        <p className="eyebrow">PERSONAL INTELLIGENCE / MEMORY & PRIVACY</p>
         <h1 id="intro-title">
-          Intent into
+          Memory without
           <br />
-          controlled action.
+          compromise.
         </h1>
         <p className="intro__description">
-          JARVIS can propose a limited navigation command. The application
-          validates every parameter, requests confirmation and sends only a
-          typed command to an authorised host adapter.
+          O JARVIS pode guardar o histórico de conversação no próprio dispositivo,
+          mas só depois de autorização explícita. O visitante mantém o controlo
+          sobre o que fica guardado e pode apagar todos os registos locais.
         </p>
         <div className="foundation-note">
-          <span className="foundation-note__index">06 / 10</span>
+          <span className="foundation-note__index">07 / 10</span>
           <p>
-            Model proposals never execute themselves. The current host is an
-            isolated sandbox; the official portfolio has not been connected.
+            A memória está desactivada por defeito. Não existe sincronização,
+            backend de conversação ou envio de mensagens para serviços externos.
           </p>
         </div>
       </section>
@@ -61,6 +68,8 @@ export function App() {
       <LocalEnginePanel />
 
       <ActionEnginePanel />
+
+      <MemoryPrivacyPanel />
 
       <section className="systems" aria-labelledby="systems-title">
         <div className="systems__heading">
