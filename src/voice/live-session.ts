@@ -13,7 +13,7 @@ interface VoiceCallbacks {
   onError?: (message: string) => void;
 }
 
-const LIVE_ENDPOINT = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent";
+const LIVE_ENDPOINT = "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained";
 
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
