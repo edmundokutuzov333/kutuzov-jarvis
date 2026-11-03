@@ -1,23 +1,37 @@
 import { useState } from "react";
 import { ConversationWorkspace } from "./ConversationWorkspace";
 import { FloatingWindow } from "./FloatingWindow";
-import { SessionInfoPanel } from "./SessionInfoPanel";
 import { NoiseAtmosphere } from "./NoiseAtmosphere";
-
-type WindowId = "conversation" | "session";
-const labels: Record<WindowId, string> = { conversation: "Conversa", session: "Sessão" };
+import { ProjectWindow } from "./ProjectWindow";
+import { VoiceConsole } from "./VoiceConsole";
+import { useLiveVoice } from "../voice/live-session";
+import type { KnowledgeEntry } from "../knowledge/schema";
 
 export function App() {
   const [assistantBusy, setAssistantBusy] = useState(false);
-  const [visible, setVisible] = useState<Record<WindowId, boolean>>({ conversation: true, session: false });
-  const [active, setActive] = useState<WindowId>("conversation");
+  const [conversationVisible, setConversationVisible] = useState(true);
+  const [activeWindow, setActiveWindow] = useState("conversation");
+  const [projectWindows, setProjectWindows] = useState<KnowledgeEntry[]>([]);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [voiceNotice, setVoiceNotice] = useState("");
 
-  function close(id: WindowId) {
-    setVisible((current) => ({ ...current, [id]: false }));
+  const voice = useLiveVoice({
+    onInputTranscript: (text) => setVoiceTranscript(text),
+    onOutputTranscript: (text) => setVoiceNotice(text.slice(-220)),
+    onError: (message) => setVoiceNotice(message),
+  });
+
+  const voiceBusy = voice.state === "processing" || voice.state === "listening" || voice.state === "speaking";
+  const coreBusy = assistantBusy || voiceBusy;
+
+  function openProject(project: KnowledgeEntry) {
+    setProjectWindows((current) => current.some((item) => item.id === project.id) ? current : [...current, project]);
+    setActiveWindow("project-" + project.id);
   }
-  function open(id: WindowId) {
-    setVisible((current) => ({ ...current, [id]: true }));
-    setActive(id);
+
+  function closeProject(projectId: string) {
+    setProjectWindows((current) => current.filter((project) => project.id !== projectId));
+    setActiveWindow("conversation");
   }
 
   return (
@@ -29,9 +43,11 @@ export function App() {
           <span className="desktop-brand__mark">EK<span>.</span></span>
           <span className="desktop-brand__name">EDMUNDO KUTUZOV</span>
         </a>
+        <span className="desktop-topbar__signal"><i /> LIVE CREATIVE SYSTEM</span>
       </header>
+
       <section className="core-stage" aria-label="Identidade visual de Edmundo Kutuzov">
-        <div className="core-orb" data-testid="jarvis-core" data-state={assistantBusy ? "thinking" : "idle"} role="img" aria-label={assistantBusy ? "A preparar uma resposta" : "Animação visual de Edmundo Kutuzov"}>
+        <div className="core-orb" data-testid="jarvis-core" data-state={coreBusy ? "thinking" : "idle"} role="img" aria-label={coreBusy ? "A preparar uma resposta" : "Animação visual de Edmundo Kutuzov"}>
           <div className="core-orb__aura" />
           <div className="core-orb__halo core-orb__halo--one" />
           <div className="core-orb__halo core-orb__halo--two" />
@@ -60,29 +76,41 @@ export function App() {
           <div className="core-orb__pulse core-orb__pulse--two" />
         </div>
         <div className="core-stage__identity">
-          <span className="eyebrow">EDMUNDO KUTUZOV</span>
+          <span className="eyebrow">EDMUNDO KUTUZOV / JARVIS</span>
           <h1>Estou por aqui.</h1>
-          <p>Vamos falar de ideias, projectos e trabalho.</p>
+          <p>Fala comigo. Explora o meu trabalho. Abre uma janela para cada ideia.</p>
         </div>
+        <VoiceConsole voice={voice} />
+        {voiceNotice ? <span className="voice-console__notice" role="status">{voiceNotice}</span> : null}
       </section>
-      {visible.conversation ? (
-        <FloatingWindow id="conversation" title="Conversa comigo" initialClass="window--conversation" zIndex={active === "conversation" ? 16 : 10} onFocus={() => setActive("conversation")} onClose={() => close("conversation")}>
-          <ConversationWorkspace historyEnabled={false} onBusyChange={setAssistantBusy} />
+
+      {conversationVisible ? (
+        <FloatingWindow id="conversation" title="Conversa comigo" initialClass="window--conversation" zIndex={activeWindow === "conversation" ? 30 : 20} onFocus={() => setActiveWindow("conversation")} onClose={() => setConversationVisible(false)}>
+          <ConversationWorkspace historyEnabled={false} onBusyChange={setAssistantBusy} voice={voice} voiceTranscript={voiceTranscript} onOpenProject={openProject} />
         </FloatingWindow>
       ) : null}
-      {visible.session ? (
-        <FloatingWindow id="session" title="Sessão JARVIS" initialClass="window--memory" zIndex={active === "session" ? 16 : 9} onFocus={() => setActive("session")} onClose={() => close("session")}>
-          <SessionInfoPanel />
+
+      {projectWindows.map((project, index) => (
+        <FloatingWindow
+          key={project.id}
+          id={"project-" + project.id}
+          title={project.title}
+          initialClass={"window--project window--project-" + (index % 3)}
+          zIndex={activeWindow === "project-" + project.id ? 40 : 25 + index}
+          onFocus={() => setActiveWindow("project-" + project.id)}
+          onClose={() => closeProject(project.id)}
+        >
+          <ProjectWindow project={project} />
         </FloatingWindow>
-      ) : null}
+      ))}
+
       <nav className="desktop-dock" aria-label="Opções">
-        {(["conversation", "session"] as WindowId[]).map((id) => (
-          <button className={visible[id] ? "dock-app is-open" : "dock-app"} key={id} type="button" aria-label={"Abrir " + labels[id]} aria-pressed={visible[id] && active === id} onClick={() => visible[id] ? setActive(id) : open(id)}>
-            <span aria-hidden="true">{id === "conversation" ? "◉" : "✦"}</span>
-            <small>{labels[id]}</small>
-            {visible[id] ? <i /> : null}
-          </button>
-        ))}
+        <button className={conversationVisible ? "dock-app is-open" : "dock-app"} type="button" aria-label="Abrir Conversa" aria-pressed={conversationVisible && activeWindow === "conversation"} onClick={() => { setConversationVisible(true); setActiveWindow("conversation"); }}>
+          <span aria-hidden="true">◉</span>
+          <small>Conversa</small>
+          {conversationVisible ? <i /> : null}
+        </button>
+        {projectWindows.length > 0 ? <span className="desktop-dock__count">{projectWindows.length} WORK</span> : null}
       </nav>
     </main>
   );
