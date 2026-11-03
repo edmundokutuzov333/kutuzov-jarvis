@@ -1,24 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
+import { LocalConversationStore, MemoryStoreError, type LocalMemoryStatus } from "../memory";
 
-import {
-  LocalConversationStore,
-  MemoryStoreError,
-  type LocalMemoryStatus,
-} from "../memory";
-
-interface MemoryPrivacyPanelProps {
-  onHistoryEnabledChange?: (enabled: boolean) => void;
-}
+interface MemoryPrivacyPanelProps { onHistoryEnabledChange?: (enabled: boolean) => void; }
 
 function describeError(error: unknown): string {
   if (error instanceof MemoryStoreError) return error.message;
   if (error instanceof Error) return error.message;
-  return "Não foi possível aceder à memória local deste browser.";
+  return "Não foi possível actualizar as suas definições. Tente novamente.";
 }
 
-export function MemoryPrivacyPanel({
-  onHistoryEnabledChange,
-}: MemoryPrivacyPanelProps) {
+export function MemoryPrivacyPanel({ onHistoryEnabledChange }: MemoryPrivacyPanelProps) {
   const store = useMemo(() => new LocalConversationStore(), []);
   const [status, setStatus] = useState<LocalMemoryStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -47,7 +38,6 @@ export function MemoryPrivacyPanel({
         if (active) setError(describeError(reason));
       });
     };
-
     void store.getStatus().then(applyStatus).catch((reason: unknown) => {
       if (active) setError(describeError(reason));
     });
@@ -60,9 +50,7 @@ export function MemoryPrivacyPanel({
 
   async function changePreference(enabled: boolean) {
     const previousStatus = status;
-    setStatus((currentStatus) => currentStatus
-      ? { ...currentStatus, historyEnabled: enabled }
-      : currentStatus);
+    setStatus((current) => current ? { ...current, historyEnabled: enabled } : current);
     setBusy(true);
     setError("");
     try {
@@ -77,11 +65,8 @@ export function MemoryPrivacyPanel({
   }
 
   async function deleteHistory() {
-    const accepted = window.confirm(
-      "Apagar definitivamente todas as sessões e mensagens guardadas neste browser? Esta operação não pode ser anulada.",
-    );
+    const accepted = window.confirm("Apagar as conversas guardadas neste dispositivo? Não será possível recuperá-las.");
     if (!accepted) return;
-
     setBusy(true);
     setError("");
     try {
@@ -98,72 +83,30 @@ export function MemoryPrivacyPanel({
     <section className="memory-panel" aria-labelledby="memory-panel-title">
       <div className="memory-panel__heading">
         <div>
-          <p className="eyebrow">PRIVACIDADE</p>
-          <h2 id="memory-panel-title">A sua memória, sob o seu controlo.</h2>
+          <h2 id="memory-panel-title">As suas conversas ficam sob o seu controlo.</h2>
           <p className="memory-panel__description">
-            O histórico guardado fica neste browser. Quando a IA está activa, a pergunta, o contexto recente e os factos públicos relevantes são enviados à Gemini API para gerar a resposta.
+            Escolha se pretende guardar as conversas neste dispositivo. Quando desactivada, esta opção não guarda o histórico depois de fechar o site.
           </p>
         </div>
-        <span className="memory-panel__badge">LOCAL</span>
       </div>
-
       <div className="memory-panel__control">
         <div>
-          <strong>Guardar conversas</strong>
-          <p>
-            O histórico que escolher guardar permanece neste browser. As perguntas enviadas à IA são processadas pelo serviço Gemini. Pode apagar o histórico local quando quiser.
-          </p>
+          <strong>Guardar conversas neste dispositivo</strong>
+          <p>As mensagens que envia são processadas por um serviço externo para gerar respostas. O histórico só fica guardado neste dispositivo quando activa esta opção.</p>
         </div>
         <label className="memory-toggle">
-          <input
-            aria-label="Guardar histórico neste dispositivo"
-            checked={status?.historyEnabled ?? false}
-            disabled={busy || status === null}
-            onChange={(event) => void changePreference(event.target.checked)}
-            type="checkbox"
-          />
+          <input aria-label="Guardar conversas neste dispositivo" checked={status?.historyEnabled ?? false} disabled={busy || status === null} onChange={(event) => void changePreference(event.target.checked)} type="checkbox" />
           <span aria-hidden="true" />
         </label>
       </div>
-
-      <div className="memory-panel__stats" aria-live="polite">
-        <div>
-          <span>CONVERSAS</span>
-          <strong data-testid="memory-session-count">
-            {status?.sessionCount ?? "—"}
-          </strong>
-        </div>
-        <div>
-          <span>MENSAGENS</span>
-          <strong data-testid="memory-message-count">
-            {status?.messageCount ?? "—"}
-          </strong>
-        </div>
-        <div>
-          <span>ESTADO</span>
-          <strong data-testid="memory-state">
-            {status === null ? "A VERIFICAR" : status.historyEnabled ? "ACTIVO" : "DESACTIVADO"}
-          </strong>
-        </div>
-      </div>
-
+      <p className="memory-panel__status" aria-live="polite">
+        {status === null ? "A carregar as definições." : status.historyEnabled ? "As conversas ficam guardadas neste dispositivo." : "As conversas não estão a ser guardadas."}
+      </p>
       <div className="memory-panel__footer">
-        <p>
-          O histórico permanece neste dispositivo e pode ser eliminado a qualquer momento.
-        </p>
-        <button
-          className="button button--quiet"
-          data-testid="memory-delete-all"
-          disabled={busy || status === null || (status.sessionCount === 0 && status.messageCount === 0)}
-          onClick={() => void deleteHistory()}
-          type="button"
-        >
-          Apagar histórico
-        </button>
+        <button className="button button--quiet" data-testid="memory-delete-all" disabled={busy || status === null || (status.sessionCount === 0 && status.messageCount === 0)} onClick={() => void deleteHistory()} type="button">Apagar conversas guardadas</button>
       </div>
-
       {error ? <p className="engine-panel__error" role="alert">{error}</p> : null}
-      {busy ? <p className="engine-panel__feedback" role="status">A actualizar as definições de memória local...</p> : null}
+      {busy ? <p className="engine-panel__feedback" role="status">A actualizar as definições...</p> : null}
     </section>
   );
 }
