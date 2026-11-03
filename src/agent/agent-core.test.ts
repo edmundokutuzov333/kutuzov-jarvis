@@ -74,19 +74,25 @@ describe("Agent Core orchestration", () => {
     expect(result.response.answer).toContain("biografia consolidada");
   });
 
-  it("abstains when the individual role on a published project is not confirmed", async () => {
-    const model = new TestModel("{}");
+  it("passes the unconfirmed project role restriction to the model and accepts an abstention", async () => {
+    const model = new TestModel(JSON.stringify({
+      status: "insufficient_evidence",
+      answer: "A informação pública não confirma a função individual desempenhada no projecto.",
+      citationIds: [],
+      followUpQuestion: null,
+    }));
     const result = await runAgentTurn(
       "Qual foi o papel individual de Kutuzov no projecto Diga YES?",
       { model },
     );
+
     expect(result.state).toBe("completed");
     if (result.state !== "completed") return;
-    expect(result.modelUsed).toBe(false);
+    expect(result.modelUsed).toBe(true);
+    expect(model.lastRequest?.userPrompt).toContain("limitation.project-roles-unconfirmed");
     expect(result.response.status).toBe("insufficient_evidence");
-    expect(result.response.answer).toContain("não confirma a função individual");
     expect(result.response.references).toEqual([]);
-    expect(model.calls).toBe(0);
+    expect(model.calls).toBe(1);
   });
 
   it("does not send a private-data prompt to the model when the catalogue has no evidence", async () => {
