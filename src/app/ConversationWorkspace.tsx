@@ -21,6 +21,8 @@ import {
 import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
 import { buildDeterministicFallback, resolveAutomaticProjectUrl } from "./conversation-utils";
+import { VoicePill } from "./VoicePill";
+import { useLiveVoice } from "../voice/live-session";
 
 interface ChatMessage extends ConversationMessage { projects?: KnowledgeEntry[]; }
 
@@ -88,6 +90,15 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<ConversationSession[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const voiceOutputRef = useRef("");
+  const voice = useLiveVoice({
+    onInputTranscript: (text) => setInput(text.slice(0, 2_000)),
+    onOutputTranscript: (text) => {
+      voiceOutputRef.current += text;
+      setNotice(voiceOutputRef.current.slice(-600));
+    },
+    onError: (message) => setNotice(message),
+  });
 
   useEffect(() => {
     let active = true;
@@ -125,9 +136,9 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
   }, [historyEnabled, store]);
 
   useEffect(() => {
-    onBusyChange?.(busy);
+    onBusyChange?.(busy || voice.state === "processing" || voice.state === "listening" || voice.state === "speaking");
     return () => onBusyChange?.(false);
-  }, [busy, onBusyChange]);
+  }, [busy, onBusyChange, voice.state]);
 
   useEffect(() => {
     if (preferenceRef.current === historyEnabled) return;
@@ -416,7 +427,12 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
           <div className="chat-composer__box">
             <textarea id="kutuzov-message" aria-label="Escreva a sua mensagem" value={input} onChange={(event) => setInput(event.target.value.slice(0, 2_000))} onKeyDown={handleInputKeyDown} placeholder="Escreva-me uma mensagem..." maxLength={2_000} rows={2} disabled={busy} />
             <div className="chat-composer__footer">
-              <span />
+              <VoicePill
+                state={voice.state}
+                supported={voice.supported}
+                onStart={() => { voiceOutputRef.current = ""; setNotice(""); void voice.start(); }}
+                onStop={voice.stop}
+              />
               <div>
                 {busy ? <button className="button button--quiet" type="button" onClick={() => abortRef.current?.abort()}>Parar</button> : null}
                 <button className="send-button" type="submit" disabled={!input.trim() || busy}>Enviar <span aria-hidden="true">↗</span></button>
