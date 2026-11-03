@@ -77,13 +77,13 @@ test("uses the Gemini endpoint and speaks without exposing provider labels", asy
   await expect(page.locator(".chat-message__meta").filter({ hasText: "KUTUZOV" })).toBeVisible();
 });
 
-test("keeps the visitor interface focused on conversation and ephemeral session", async ({ page }) => {
+test("keeps the visitor interface focused on conversation and live voice", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
   await expect(page.locator('[data-window-id="session"]')).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Abrir Sessão" })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Falar com Edmundo" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
-  await expect(page.getByText(/SANDBOX|DEMO HOST|REGISTERED ACTIONS|FONTES CONSULTADAS/)).toHaveCount(0);
+  await expect(page.getByText(/SANDBOX|DEMO HOST|REGISTERED ACTIONS|FONTES CONSULTADAS|Sessão/)).toHaveCount(0);
 });
 
 test("keeps the conversation usable on a narrow mobile viewport", async ({ page }) => {
@@ -134,4 +134,32 @@ test("keeps desktop windows draggable and the central orb letter-free", async ({
   if (!after) throw new Error("Conversation window disappeared after dragging.");
   expect(after.x).toBeGreaterThan(before.x + 40);
   expect(after.y).toBeGreaterThan(before.y + 40);
+});
+
+
+test("opens each project in an independent draggable window", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explorar os meus projectos" }).click();
+  await expect(page.getByText("Abre cada trabalho numa janela")).toBeVisible();
+  const trigger = page.getByRole("button", { name: /Abrir projecto/ }).first();
+  await expect(trigger).toBeVisible();
+  const projectTitle = await trigger.locator("strong").innerText();
+  await trigger.click();
+  const projectWindow = page.locator(".window--project").first();
+  await expect(projectWindow).toBeVisible();
+  await expect(projectWindow.getByRole("heading", { name: projectTitle })).toBeVisible();
+  const before = await projectWindow.boundingBox();
+  const bar = projectWindow.locator(".floating-window__bar");
+  const handle = await bar.boundingBox();
+  if (!before || !handle) throw new Error("Project window geometry is unavailable.");
+  await page.mouse.move(handle.x + 150, handle.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(handle.x + 205, handle.y + 65, { steps: 5 });
+  await page.mouse.up();
+  const after = await projectWindow.boundingBox();
+  if (!after) throw new Error("Project window disappeared after dragging.");
+  expect(after.x).toBeGreaterThan(before.x + 30);
+  expect(after.y).toBeGreaterThan(before.y + 25);
+  await projectWindow.getByRole("button", { name: /Fechar/ }).click();
+  await expect(projectWindow).toHaveCount(0);
 });
