@@ -214,6 +214,23 @@ A interface não está ligada às rotas do website oficial. O estado do adaptado
 
 Consultar [docs/PHASE-8.md](docs/PHASE-8.md).
 
+## Fase 9: testes e optimização
+
+A Fase 9 acrescenta avaliação quantitativa do retrieval, testes de factualidade estrutural e abstenção, validação de acções inválidas, testes de segurança no browser e budgets do bundle inicial.
+
+- Corpus em português: 11 perguntas sobre identidade, posicionamento, experiência, projectos, clientes, serviços, competências, métricas, restrições editoriais e perguntas sem evidência.
+- Retrieval: 11/11 casos; 9/9 factos esperados; 1/1 restrição editorial; 0/2 falsos positivos nos casos sem evidência.
+- Testes unitários: 17 ficheiros, 110/110 aprovados.
+- Playwright: 44/44 testes em Chromium, Chrome Stable, Edge Stable e WebKit.
+- Segurança: payload HTML hostil permanece texto inerte; não foram observados pedidos externos no percurso determinístico testado.
+- Budgets iniciais aprovados: HTML 697 bytes; JavaScript 405,310 bytes bruto / 120,200 gzip; CSS 22,282 bytes bruto / 5,253 gzip.
+
+O teste de restrição editorial usa um stub para validar que o contexto chega ao Agent Core e que uma abstenção estruturada é aceite. Não é prova de que o Qwen3 real cumpra a instrução. A comparação de modelos é documental, baseada em metadados publicados, e não em execuções reais.
+
+**Aceitação integral pendente:** Qwen3 em GPU física, download medido, inicialização, first token, tokens/s, memória e revisão humana de respostas em português. Playwright WebKit em Linux não substitui Safari em macOS/iOS. A Fase 10 permanece bloqueada.
+
+Consultar [docs/PHASE-9.md](docs/PHASE-9.md), [docs/MODEL-EVALUATION.md](docs/MODEL-EVALUATION.md) e [docs/PHASE-9-DEVICE-MATRIX.md](docs/PHASE-9-DEVICE-MATRIX.md).
+
 ## Quality gates
 
 Último workflow da Fase 9: [JARVIS quality gates, run 41561565406](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41561565406). Resultado final: **success**.
