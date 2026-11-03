@@ -35,7 +35,7 @@ test("uses a clear public-information fallback when the assistant is unavailable
   await expect(page.getByTestId("conversation-status")).toContainText("Informação publicada");
   await page.getByLabel("Escreva a sua mensagem").fill("Quem é Kutuzov?");
   await page.getByRole("button", { name: "Enviar" }).click();
-  await expect(page.getByText(/Posso partilhar consigo o que está publicado/)).toBeVisible();
+  await expect(page.getByText(/Posso partilhar consigo o que está confirmado/)).toBeVisible();
   await expect(page.getByText(/Art Director/).first()).toBeVisible();
   await expect(page.getByText(/pesquisa local|modelo não carregado|inteligência artificial local/i)).toHaveCount(0);
 });
