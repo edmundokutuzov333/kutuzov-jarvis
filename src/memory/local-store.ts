@@ -45,6 +45,27 @@ function transactionResult(transaction: IDBTransaction): Promise<void> {
   });
 }
 
+
+function isQuotaExceeded(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("name" in error)) return false;
+  return error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED";
+}
+
+function makeTransactionError(error: unknown, fallbackMessage: string): MemoryStoreError {
+  if (isQuotaExceeded(error)) {
+    return new MemoryStoreError(
+      "QUOTA_EXCEEDED",
+      "O armazenamento local deste browser atingiu o limite disponível. Apague conversas antigas ou liberte espaço no dispositivo.",
+      { cause: error },
+    );
+  }
+  return new MemoryStoreError(
+    "TRANSACTION_FAILED",
+    fallbackMessage,
+    { cause: error },
+  );
+}
+
 function deleteSessionMessages(transaction: IDBTransaction, sessionId: string): void {
   const index = transaction.objectStore(MESSAGES_STORE).index(SESSION_INDEX);
   const request = index.openCursor(IDBKeyRange.only(sessionId));
@@ -184,11 +205,7 @@ export class LocalConversationStore {
     try {
       await done;
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível aplicar a retenção da memória local.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível aplicar a retenção da memória local.");
     }
   }
 
@@ -220,11 +237,7 @@ export class LocalConversationStore {
         messageCount,
       };
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível consultar o estado da memória local.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível consultar o estado da memória local.");
     }
   }
 
@@ -241,11 +254,7 @@ export class LocalConversationStore {
     try {
       await done;
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível actualizar a preferência de histórico local.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível actualizar a preferência de histórico local.");
     }
   }
 
@@ -309,10 +318,9 @@ export class LocalConversationStore {
             "Não foi possível criar uma sessão local.",
             { cause: transaction.error ?? undefined },
           ));
-      transaction.onerror = () => reject(new MemoryStoreError(
-        "TRANSACTION_FAILED",
+      transaction.onerror = () => reject(makeTransactionError(
+        transaction.error,
         "Não foi possível criar uma sessão local.",
-        { cause: transaction.error ?? undefined },
       ));
     });
   }
@@ -397,17 +405,15 @@ export class LocalConversationStore {
           ? new MemoryStoreError("MEMORY_DISABLED", "O histórico local está desactivado.")
           : sessionMissing
             ? new MemoryStoreError("SESSION_NOT_FOUND", "A sessão local já não existe.")
-            : new MemoryStoreError(
-                "TRANSACTION_FAILED",
+            : makeTransactionError(
+                transaction.error,
                 "Não foi possível guardar esta mensagem localmente.",
-                { cause: transaction.error ?? undefined },
               );
         reject(error);
       };
-      transaction.onerror = () => reject(new MemoryStoreError(
-        "TRANSACTION_FAILED",
+      transaction.onerror = () => reject(makeTransactionError(
+        transaction.error,
         "Não foi possível guardar esta mensagem localmente.",
-        { cause: transaction.error ?? undefined },
       ));
     });
   }
@@ -423,11 +429,7 @@ export class LocalConversationStore {
         .map((record) => ConversationSessionSchema.parse(record))
         .sort((left, right) => right.updatedAt - left.updatedAt);
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível ler as sessões locais.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível ler as sessões locais.");
     }
   }
 
@@ -446,11 +448,7 @@ export class LocalConversationStore {
         .map((record) => StoredConversationMessageSchema.parse(record))
         .sort((left, right) => left.createdAt - right.createdAt);
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível ler as mensagens locais.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível ler as mensagens locais.");
     }
   }
 
@@ -467,11 +465,7 @@ export class LocalConversationStore {
     try {
       await done;
     } catch (error) {
-      throw new MemoryStoreError(
-        "TRANSACTION_FAILED",
-        "Não foi possível apagar esta sessão local.",
-        { cause: error },
-      );
+      throw makeTransactionError(error, "Não foi possível apagar esta sessão local.");
     }
   }
 
