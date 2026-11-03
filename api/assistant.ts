@@ -195,10 +195,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     return;
   }
 
-  const [{ AgentHistorySchema, AgentQuestionSchema }, { runAgentTurn }] = await Promise.all([
-    import("../src/agent/contracts"),
-    import("../src/agent/agent-core"),
-  ]);
+  const { AgentHistorySchema, AgentQuestionSchema } = await import("../src/agent/contracts");
 
   const contentLength = Number(headerValue(request.headers["content-length"]));
   if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
@@ -229,6 +226,7 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   }
 
   try {
+    const { runAgentTurn } = await import("../src/agent/agent-core");
     const result = await runAgentTurn(question.data, {
       model: createGeminiModel(apiKey),
       history: history.data,
