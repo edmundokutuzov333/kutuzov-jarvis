@@ -20,7 +20,8 @@ import {
 } from "../memory";
 import { searchKnowledge } from "../knowledge/search";
 import type { KnowledgeEntry } from "../knowledge/schema";
-import { buildDeterministicFallback, resolveAutomaticProjectUrl } from "./conversation-utils";
+import { buildDeterministicFallback } from "./conversation-utils";
+import { ProjectDeck } from "./ProjectDeck";
 import { VoicePill } from "./VoicePill";
 import { useLiveVoice } from "../voice/live-session";
 
@@ -247,7 +248,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     }
 
     let assistantMessage: ChatMessage;
-    let autoOpenProjectUrl: string | null = null;
 
     let canUseGemini = geminiAvailable;
     if (!canUseGemini) {
@@ -267,9 +267,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
             minScore: 2,
             kinds: ["project"],
           }).map((item) => item.record);
-          const navigationContext = [question, ...history.filter((item) => item.role === "user").map((item) => item.content)].join(" ");
-          autoOpenProjectUrl = resolveAutomaticProjectUrl(result.response.actionProposal, navigationContext);
-          assistantMessage = {
+          const navigationContext = [question, ...history.filter((item) => item.role === "user").map((item) => item.content)].join(" ");          assistantMessage = {
             ...makeMessage("assistant", result.response.answer),
             projects,
           };
@@ -278,25 +276,19 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
         if (controller.signal.aborted) {
           assistantMessage = makeMessage("assistant", "A geração foi interrompida. Pode voltar a enviar a pergunta.");
         } else {
-          const fallback = buildDeterministicFallback(question);
-          autoOpenProjectUrl = resolveAutomaticProjectUrl(fallback.actionProposal, question);
-          assistantMessage = makeMessage("assistant", fallback.answer);
+          const fallback = buildDeterministicFallback(question);          assistantMessage = makeMessage("assistant", fallback.answer);
           assistantMessage.projects = fallback.projects;
           setNotice("Não consegui responder a tudo neste momento. Partilho a informação confirmada que encontrei.");
           setError("");
         }
       }
     } else {
-      const fallback = buildDeterministicFallback(question);
-      autoOpenProjectUrl = resolveAutomaticProjectUrl(fallback.actionProposal, question);
-      assistantMessage = makeMessage("assistant", fallback.answer);
+      const fallback = buildDeterministicFallback(question);      assistantMessage = makeMessage("assistant", fallback.answer);
       assistantMessage.projects = fallback.projects;
     }
 
     if (controller.signal.aborted) {
-      assistantMessage = makeMessage("assistant", "A resposta foi interrompida.");
-      autoOpenProjectUrl = null;
-    }
+      assistantMessage = makeMessage("assistant", "A resposta foi interrompida.");    }
 
     setMessages((current) => [...current, assistantMessage]);
 
@@ -319,9 +311,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
 
     abortRef.current = null;
     setBusy(false);
-    if (autoOpenProjectUrl && !controller.signal.aborted) {
-      window.location.assign(autoOpenProjectUrl);
-    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -391,22 +380,7 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
                   <div className="chat-message__meta"><span>{message.role === "user" ? "VOCÊ" : "KUTUZOV"}</span></div>
                   <p className="chat-message__body">{message.content}</p>
                   {message.projects && message.projects.length > 0 ? (
-                    <div className="project-card-grid" aria-label="Projectos relacionados">
-                      {message.projects.slice(0, 3).map((project) => {
-                        const slug = getProjectMetadata(project, "slug");
-                        const projectUrl = slug
-                          ? resolveAutomaticProjectUrl({ action: "OPEN_PROJECT", parameters: { slug } } as import("../actions/schemas").PortfolioActionProposal, project.title)
-                          : null;
-                        if (!projectUrl) return null;
-                        return (
-                          <a className="project-card" key={project.id} href={projectUrl}>
-                            <span className="project-card__kind">{[getProjectMetadata(project, "client"), getProjectMetadata(project, "year")].filter(Boolean).join(" · ")}</span>
-                            <h4>{project.title}</h4>
-                            <span className="project-card__link">Ver projecto <b aria-hidden="true">↗</b></span>
-                          </a>
-                        );
-                      })}
-                    </div>
+                    <ProjectDeck projects={message.projects} />
                   ) : null}
                 </article>
               ))}
