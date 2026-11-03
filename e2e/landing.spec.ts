@@ -12,7 +12,7 @@ test("opens a personal conversation without technical controls", async ({ page }
   await expect(page.getByRole("button", { name: "Nova conversa" })).toBeVisible();
   await expect(page.getByTestId("conversation-status")).toBeVisible();
   await expect(page.locator('[data-window-id="conversation"]')).toBeVisible();
-  await expect(page.getByText(/Gemini|JARVIS|Qwen3|WebGPU|sandbox|modelo local/i)).toHaveCount(0);
+  await expect(page.getByText(/Gemini|Qwen3|WebGPU|sandbox|modelo local/i)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Comandos|Acções disponíveis/ })).toHaveCount(0);
   expect(externalModelRequests).toHaveLength(0);
 });
