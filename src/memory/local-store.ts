@@ -155,7 +155,34 @@ export class LocalConversationStore {
     return this.databasePromise;
   }
 
+  private async pruneExpiredSessions(): Promise<void> {
+    const database = await this.openDatabase();
+    const transaction = database.transaction([SESSIONS_STORE, MESSAGES_STORE], "readwrite");
+    const done = transactionResult(transaction);
+    const sessions = transaction.objectStore(SESSIONS_STORE);
+    const request = sessions.getAll();
+    request.onsuccess = () => {
+      const cutoff = Date.now() - MAX_SESSION_AGE_DAYS * 24 * 60 * 60 * 1_000;
+      for (const session of request.result as ConversationSession[]) {
+        if (session.updatedAt < cutoff) {
+          sessions.delete(session.id);
+          deleteSessionMessages(transaction, session.id);
+        }
+      }
+    };
+    try {
+      await done;
+    } catch (error) {
+      throw new MemoryStoreError(
+        "TRANSACTION_FAILED",
+        "Não foi possível aplicar a retenção da memória local.",
+        { cause: error },
+      );
+    }
+  }
+
   async getStatus(): Promise<LocalMemoryStatus> {
+    await this.pruneExpiredSessions();
     const database = await this.openDatabase();
     const transaction = database.transaction(
       [SETTINGS_STORE, SESSIONS_STORE, MESSAGES_STORE],
@@ -211,7 +238,7 @@ export class LocalConversationStore {
     }
   }
 
-  async createSession(title = "Nova conversa"): Promise<ConversationSession> {
+  async createSession(): Promise<ConversationSession> {
     const database = await this.openDatabase();
     return new Promise((resolve, reject) => {
       const transaction = database.transaction(
@@ -238,7 +265,7 @@ export class LocalConversationStore {
           const now = Date.now();
           created = ConversationSessionSchema.parse({
             id: createId(),
-            title: title.trim().slice(0, 80) || "Nova conversa",
+            title: "Nova conversa",
             createdAt: now,
             updatedAt: now,
             messageCount: 0,
@@ -285,12 +312,21 @@ export class LocalConversationStore {
   ): Promise<StoredConversationMessage> {
     const database = await this.openDatabase();
     const now = input.createdAt ?? Date.now();
-    const message = ConversationMessageSchema.parse({
-      id: createId(),
-      role: input.role,
-      content: input.content,
-      createdAt: now,
-    });
+    let message: ReturnType<typeof ConversationMessageSchema.parse>;
+    try {
+      message = ConversationMessageSchema.parse({
+        id: createId(),
+        role: input.role,
+        content: input.content,
+        createdAt: now,
+      });
+    } catch (error) {
+      throw new MemoryStoreError(
+        "INVALID_MESSAGE",
+        "A mensagem excede os limites ou não respeita o formato permitido.",
+        { cause: error },
+      );
+    }
     const stored = StoredConversationMessageSchema.parse({ ...message, sessionId });
 
     return new Promise((resolve, reject) => {
@@ -323,6 +359,7 @@ export class LocalConversationStore {
             return;
           }
 
+          stored.createdAt = Math.max(stored.createdAt, session.updatedAt + 1);
           const addRequest = messages.add(stored);
           addRequest.onsuccess = () => {
             const listRequest = messages.index(SESSION_INDEX).getAll(IDBKeyRange.only(sessionId));
