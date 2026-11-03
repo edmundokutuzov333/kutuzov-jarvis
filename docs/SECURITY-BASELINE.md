@@ -112,3 +112,8 @@ O adaptador real do portefólio ainda não existe. A aplicação anfitriã terá
 - Ligações IndexedDB fecham em `versionchange`; erros de bloqueio, indisponibilidade e transacção são expostos ao utilizador.
 
 A prova Playwright de ausência de pedidos externos cobre o fluxo de memória automatizado no Chromium. Não substitui auditoria de rede de todos os fluxos futuros nem prova por si só a privacidade da interface conversacional, que será ligada na Fase 8 e auditada novamente na Fase 9.
+
+
+- A memória local distingue o erro `QUOTA_EXCEEDED` de falhas genéricas de transacção, apresentando uma instrução para libertar espaço ou apagar histórico.
+- A memória é armazenamento local do origin, sem cifragem própria da aplicação. O acesso ao perfil local do browser pode permitir inspeccionar IndexedDB; não guardar segredos ou dados pessoais desnecessários.
+- A Fase 7 não adiciona pedidos HTTP, telemetria ou sincronização ao módulo de memória.
