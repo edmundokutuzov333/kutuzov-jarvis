@@ -135,7 +135,6 @@ export function ConversationWorkspace({ historyEnabled, onBusyChange }: Conversa
     setCurrentSessionId(null);
     setHistoryOpen(false);
     if (historyEnabled) {
-      setMessages([]);
       setNotice("As próximas mensagens serão guardadas neste dispositivo.");
     } else {
       setNotice("As próximas mensagens não serão guardadas.");
