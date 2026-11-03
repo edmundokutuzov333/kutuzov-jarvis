@@ -1,7 +1,7 @@
 # Fase 9: testes e optimização
 
 **Data:** 3 de Novembro de 2026  
-**Estado:** implementação da avaliação automatizada em curso. A aceitação integral permanece bloqueada pela ausência de ensaio físico de WebGPU/Qwen3.
+**Estado final:** gates automatizados aprovados na CI; aceitação integral ainda bloqueada por ensaio físico de WebGPU/Qwen3 e avaliação de respostas reais. Workflow [run 41561565406](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41561565406) concluído com sucesso.
 
 ## Objectivo
 
@@ -27,7 +27,7 @@ O benchmark mede retrieval determinístico e recuperação de restrições, não
 ## Agent Core, factualidade e abstenção
 
 Foram acrescentados testes para:
-- Abstenção quando o papel individual de Kutuzov num projecto não está confirmado.
+- Transporte da restrição editorial sobre o papel individual não confirmado no projecto, com validação de uma saída de abstenção estruturada. O teste usa um stub de contrato, não o modelo real.
 - Não enviar ao modelo um pedido de dados pessoais sem suporte na Knowledge Base.
 - Rejeitar acções não incluídas na whitelist.
 - Rejeitar parâmetros arbitrários, propriedades extra e valores do tipo URL/script.
@@ -44,7 +44,7 @@ Foi acrescentado um teste Playwright com payload HTML hostil:
 
 Este teste é uma verificação automatizada do percurso testado. Não equivale a auditoria de segurança formal, fuzzing completo, auditoria de dependências ou prova de ausência de todos os canais de rede em todos os browsers.
 
-Os módulos de memória mantêm IndexedDB local e opt-in. O histórico não tem cifragem própria da aplicação; não deve guardar dados sensíveis.
+Foi corrigido um risco de relevância no fallback: uma pergunta sobre dados privados que apenas mencionasse «Kutuzov» podia recuperar o perfil por coincidência lexical. O fallback exclui o nome próprio da correspondência de relevância e permite a pesquisa por nome apenas em perguntas directas de identidade, limitadas a registos públicos de identidade. O histórico mantém IndexedDB local e opt-in, sem cifragem própria da aplicação.
 
 ## Browsers
 
@@ -80,20 +80,45 @@ Decisão provisória:
 
 A comparação utiliza metadados de repositórios e configurações publicadas. Nenhum dos modelos alternativos foi descarregado ou executado nesta fase. Não há resultados comparativos de tokens/s, latência ou factualidade em hardware real.
 
+## Resultados da CI e desempenho medido
+
+Workflow: [JARVIS quality gates, run 41561565406](https://github.com/edmundokutuzov333/kutuzov-jarvis/actions/runs/41561565406), conclusão success.
+
+- TypeScript: aprovado.
+- ESLint: aprovado.
+- Vitest: 17 ficheiros, 110/110 testes aprovados.
+- Build de produção: aprovado.
+- Budget do bundle inicial: aprovado.
+- Playwright: 44/44 testes aprovados, com 11 testes em cada projecto: Chromium, Chrome Stable, Microsoft Edge Stable e WebKit.
+
+Tamanhos medidos:
+- HTML inicial: 697 bytes, budget 2,048.
+- JavaScript inicial: 405,310 bytes, 120,200 bytes gzip; budget 460,800 bytes / 138,240 gzip.
+- CSS inicial: 22,282 bytes, 5,253 bytes gzip; budget 25,600 bytes / 6,144 gzip.
+- Chunk runtime WebLLM: 5,954.23 KB, gzip 2,148.18 KB.
+- Worker WebLLM: 6,121.59 KB.
+
+O runtime e o Worker são artefactos separados. O HTML de entrada não os referencia. Os testes E2E confirmam que abrir a interface não descarrega o runtime nem os pesos. O peso do modelo não faz parte destes tamanhos.
+
+O corpus de retrieval obteve 11/11 casos aprovados, 9/9 factos públicos esperados recuperados, 1/1 restrição editorial recuperada e 0/2 falsos positivos nos casos sem evidência.
+
+Os testes de acções, validação de propostas, memória, fallback, XSS e ausência de pedidos externos no percurso determinístico passaram nos quatro projectos Playwright.
+
 ## Critérios de aceitação e bloqueios
 
 | Critério | Estado |
 |---|---|
-| Suite TypeScript, lint, Vitest e build | A validar na CI da Fase 9 |
-| Corpus determinístico de retrieval PT | Implementado; execução CI pendente |
-| Factos publicados e restrições editoriais | Cobertos no corpus de avaliação |
-| Casos de abstenção | Cobertos por perguntas sem evidência |
+| Suite TypeScript, lint, Vitest e build | Aprovada na CI |
+| Corpus determinístico de retrieval PT | 11/11 casos aprovados |
+| Factos públicos esperados | 9/9 recuperados |
+| Restrições editoriais esperadas | 1/1 recuperada |
+| Falsos positivos em casos sem evidência | 0/2 |
+| Segurança XSS de renderização | Aprovada em 4 projectos Playwright |
+| Ausência de chamadas externas no percurso determinístico | Aprovada em 4 projectos Playwright |
+| Acções inválidas e parâmetros arbitrários | Aprovados nos testes unitários |
+| Chromium, Chrome Stable, Edge Stable e WebKit | 44/44 testes aprovados |
+| Budgets do bundle inicial | Aprovados |
 | Respostas reais do Qwen3 e entailment | Pendente de GPU física e revisão humana |
-| Segurança XSS de renderização | Teste E2E implementado; execução CI pendente |
-| Ausência de chamadas externas na conversa testada | Teste E2E implementado; execução CI pendente |
-| Acções inválidas e parâmetros arbitrários | Testes unitários implementados; execução CI pendente |
-| Chromium, Chrome Stable, Edge Stable e WebKit | Configurados na CI; execução CI pendente |
-| Budgets do bundle inicial | Implementados; execução CI pendente |
 | Tamanho real transferido dos pesos | Pendente de medição no browser |
 | Inicialização, primeiro token e tokens/s | Pendente de GPU física |
 | Pico de memória GPU/RAM | Pendente de dispositivo físico |
