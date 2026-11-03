@@ -90,7 +90,9 @@ export function MemoryPrivacyPanel() {
           <strong>Guardar histórico neste dispositivo</strong>
           <p>
             Desactivado por defeito. Ao activar, o JARVIS pode guardar sessões e
-            mensagens para recuperar o contexto em visitas seguintes.
+            mensagens para recuperar o contexto em visitas seguintes. Desactivar
+            esta opção não apaga o que já foi guardado. Use o botão abaixo para
+            eliminar todos os registos locais.
           </p>
         </div>
         <label className="memory-toggle">
