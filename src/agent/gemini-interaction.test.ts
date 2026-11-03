@@ -5,7 +5,7 @@ describe("Gemini Interactions API output extraction", () => {
   it("extracts model output when the step has no status field", () => {
     expect(extractGeminiText({
       status: "completed",
-      steps: [{ type: "model_output", content: [{ type: "text", text: "{\\"status\\":\\"answered\\"}" }] }],
+      steps: [{ type: "model_output", content: [{ type: "text", text: '{"status":"answered"}' }] }],
     })).toBe('{"status":"answered"}');
   });
 
